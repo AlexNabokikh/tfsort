@@ -1,0 +1,38 @@
+builds:
+  - id: tfsort
+    main: ./cmd/root.go
+    binary: tfsort
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm
+      - arm64
+    flags:
+      - -mod=vendor
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+    env:
+      - CGO_ENABLED=0
+
+release:
+  prerelease: auto
+
+universal_binaries:
+  - replace: true
+
+brews:
+  - name: tfsort
+    description: Sort Terraform files
+    homepage: https://github/AlexNabokikh/tfsort
+    tap:
+      owner: https://github/AlexNabokikh/
+      name: homebrew-tfsort
+    commit_author:
+      name: AlexNabokikh
+      email: nabokikh@duck.com
+
+checksum:
+  name_template: "checksums.txt"
