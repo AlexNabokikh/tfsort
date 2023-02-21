@@ -20,5 +20,14 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
-      - name: Test
+      - name: Go Test
         run: go test -v ./tsort
+
+      - name: Go Vet
+        run: go vet ./tsort
+
+      - name: Go Lint
+        run: golangci-lint run ./tsort
+
+      - name: Go Cover
+        run: go test -v -cover ./tsort
