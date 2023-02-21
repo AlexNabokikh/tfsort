@@ -2,24 +2,40 @@
 
 ![Logo](files/logo.png)
 
-tfsort is a Go package that provides functions to parse and sort variable and output blocks in Terraform files.
+tfsort is a command-line utility that sorts Terraform variables and outputs in a .tf file.
 
 ## Installation
 
-To install the package, run:
-
-```bash
-go get -u github.com/AlexNabokikh/tfsort
-```
+To install tfsort, you can download the latest binary release from the [releases page](https://github.com/AlexNabokikh/tfsort/releases).
+Alternatively, you can build from source by cloning the repository and running `go build`.
 
 ## Usage
 
-TBD
+The basic usage of tfsort is as follows:
 
-## Contributing
+```bash
+tfsort --file <path-to-tf-file> [--out <path-to-output-file>] [--dry-run]
+```
 
-Please feel free to submit any issues or pull requests.
+Available flags:
 
-## License
+- `--file`: the path to the .tf file you want to sort. This flag is optional.
+- `--out`: the path to the output file. If not provided, tfsort will overwrite the input file.
+- `--dry-run`: preview the changes without altering the original file.
 
-This package is available under the MIT license. See the LICENSE file for more information.
+## Examples
+
+Here's an example of using tfsort to sort a Terraform file called `main.tf`:
+
+```bash
+tfsort variables.tf
+```
+
+This will sort the resources in `variables.tf` in place.
+You can also use the `--out` flag to specify an output file:
+
+```bash
+tfsort --file variables.tf --out sorted.tf
+```
+
+This will create a new file called `sorted.tf` with the sorted resources.
