@@ -27,7 +27,7 @@ jobs:
         run: go vet ./tsort
 
       - name: Go Lint
-        run: golangci-lint run ./tsort
+        run: golint run ./tsort
 
       - name: Go Cover
         run: go test -v -cover ./tsort
