@@ -1,43 +1,53 @@
-package cmd
+package main
 
 import (
-	"os"
+	"log"
 
+	"github.com/AlexNabokikh/tfsort/tsort"
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   "tfsort",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+func main() {
+	var filePath string
+	var outputPath string
+	var dryRun bool
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
-}
+	var rootCmd = &cobra.Command{
+		Use:   "tfsort [file]",
+		Short: "Sorts the variables and outputs in a Terraform file",
+		Args:  cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 0 {
+				filePath = args[0]
+			}
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
+			if filePath == "" {
+				return cmd.Usage()
+			}
+
+			if err := tsort.ValidateFilePath(filePath); err != nil {
+				return err
+			}
+
+			i := tsort.NewIngestor()
+
+			return i.Parse(filePath, outputPath, dryRun)
+		},
 	}
-}
 
-func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
+	rootCmd.PersistentFlags().StringVarP(
+		&outputPath,
+		"out",
+		"o",
+		"",
+		"Path to the output file")
+	rootCmd.PersistentFlags().BoolVarP(
+		&dryRun,
+		"dry-run",
+		"d", false,
+		"Preview the changes without altering the original file.")
 
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.tfsort.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	if err := rootCmd.Execute(); err != nil {
+		log.Fatalf("error: %s", err)
+	}
 }
