@@ -16,3 +16,6 @@ vendor/
 
 # Go workspace file
 go.work
+
+# DS Store
+.DS_Store
