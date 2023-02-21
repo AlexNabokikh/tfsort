@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "*"
+    branches:
+      - master
 
 permissions:
   contents: write
@@ -23,7 +25,7 @@ jobs:
       - uses: goreleaser/goreleaser-action@v4
         with:
           distribution: goreleaser
-          version: ${{ env.GITHUB_REF_NAME } }}}
+          version: latest
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.PUBLISHER_TOKEN }}
