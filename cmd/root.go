@@ -14,7 +14,7 @@ func main() {
 
 	var rootCmd = &cobra.Command{
 		Use:   "tfsort [file]",
-		Short: "Sorts the variables and outputs in a Terraform file",
+		Short: "A utility to sort Terraform variables and outputs",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
@@ -40,12 +40,12 @@ func main() {
 		"out",
 		"o",
 		"",
-		"Path to the output file")
+		"path to the output file")
 	rootCmd.PersistentFlags().BoolVarP(
 		&dryRun,
 		"dry-run",
 		"d", false,
-		"Preview the changes without altering the original file.")
+		"preview the changes without altering the original file.")
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatalf("error: %s", err)

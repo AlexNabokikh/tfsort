@@ -39,3 +39,13 @@ tfsort --file variables.tf --out sorted.tf
 ```
 
 This will create a new file called `sorted.tf` with the sorted resources.
+
+## Author
+
+This project was created by [Alexander Nabokikh](https://www.linkedin.com/in/nabokih/).
+
+## License
+
+This software is available under the following licenses:
+
+- **[Apache 2.0](https://github.com/AlexNabokikh/tfsort/blob/master/LICENSE)**

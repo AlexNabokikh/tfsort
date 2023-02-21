@@ -115,12 +115,3 @@ func ValidateFilePath(path string) error {
 		return nil
 	}
 }
-
-// validateOutputPath checks that the given output path, if not empty, is a valid file path.
-// func ValidateOutputPath(path string) error {
-// 	if path == "" {
-// 		return nil
-// 	}
-
-// 	return ValidateFilePath(path)
-// }
