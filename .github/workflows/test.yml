@@ -20,8 +20,23 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
-      - name: Go Test
-        run: go test -v -cover ./tsort
-
       - name: Go Vet
         run: go vet ./tsort
+
+      - name: Go Test with Coverage
+        run: go test -v -coverprofile=coverage.out ./tsort
+
+      - name: Generate coverage badge
+        run: curl -s https://gocover.io/_badge/tsort/coverage.out > badge.svg
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage.out
+
+      - name: Publish coverage badge
+        uses: JamesIves/github-pages-deploy-action@4.4.1
+        with:
+          branch: main
+          folder: ./
