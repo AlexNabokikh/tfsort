@@ -23,14 +23,11 @@ jobs:
       - name: Go Vet
         run: go vet ./tsort
 
-      - name: Go Test
-        run: go test -v ./...
+      - name: Test with Coverage
+        run: go test -v -coverprofile=coverage.out ./...
 
-      - name: Update coverage report
+      - name: Coverage Report
         uses: ncruces/go-coverage-report@main
-        if: |
-          matrix.os == 'ubuntu-latest' &&
-          github.event_name == 'push'
-        continue-on-error: true
-        # with:
-        #   branch: master
+        if: github.ref == 'refs/heads/master'
+        with:
+          coverage_path: coverage.out
