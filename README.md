@@ -1,5 +1,9 @@
 # tfsort
 
+[![badge-gh-release](https://github.com/AlexNabokikh/tfsort/actions/workflows/release.yml/badge.svg)](https://github.com/AlexNabokikh/tfsort/actions/workflows/release.yml/badge.svg)
+[![badge-gh-tests](https://github.com/AlexNabokikh/tfsort/actions/workflows/test.yml/badge.svg)](https://github.com/AlexNabokikh/tfsort/actions/workflows/test.yml/badge.svg)
+[![go-report-card](https://goreportcard.com/badge/github.com/AlexNabokikh/tfsort)](https://goreportcard.com/report/github.com/AlexNabokikh/tfsort)
+
 ![Logo](files/logo.png)
 
 tfsort is a command-line utility that sorts Terraform variables and outputs in a .tf file.
