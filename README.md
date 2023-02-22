@@ -3,6 +3,7 @@
 [![badge-gh-release](https://github.com/AlexNabokikh/tfsort/actions/workflows/release.yml/badge.svg)](https://github.com/AlexNabokikh/tfsort/actions/workflows/release.yml/badge.svg)
 [![badge-gh-tests](https://github.com/AlexNabokikh/tfsort/actions/workflows/test.yml/badge.svg)](https://github.com/AlexNabokikh/tfsort/actions/workflows/test.yml/badge.svg)
 [![go-report-card](https://goreportcard.com/badge/github.com/AlexNabokikh/tfsort)](https://goreportcard.com/report/github.com/AlexNabokikh/tfsort)
+[![go-test-coverage](https://github.com/AlexNabokikh/tfsort/wiki/coverage.svg)](https://raw.githack.com/wiki/AlexNabokikh/tfsort/coverage.html)
 
 ![Logo](files/logo.png)
 
