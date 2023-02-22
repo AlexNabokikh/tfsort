@@ -32,5 +32,5 @@ jobs:
           matrix.os == 'ubuntu-latest' &&
           github.event_name == 'push'
         continue-on-error: true
-        with:
-          branch: master
+        # with:
+        #   branch: master
