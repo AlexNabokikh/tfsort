@@ -28,5 +28,6 @@ jobs:
 
       - name: Coverage Report
         uses: ncruces/go-coverage-report@main
+        if: github.ref == 'refs/heads/master'
         with:
           coverage_path: coverage.out
