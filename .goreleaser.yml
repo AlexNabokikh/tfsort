@@ -23,6 +23,17 @@ release:
 universal_binaries:
   - replace: true
 
+brews:
+  - name: tfsort
+    description: "Sort Terraform files"
+    homepage: "https://github.com/AlexNabokikh/tfsort"
+    tap:
+      owner: alexnabokikh
+      name: homebrew-tfsort
+    commit_author:
+      name: Alex Nabokikh
+      email: nabokikh@duck.com
+
 checksum:
   name_template: "checksums.txt"
 

@@ -6,8 +6,27 @@ tfsort is a command-line utility that sorts Terraform variables and outputs in a
 
 ## Installation
 
+### Homebrew
+
+To install tfsort using Homebrew, run the following command:
+
+1. Add the tap:
+
+```bash
+brew tap alexnabokikh/tfsort
+```
+
+2. Install tfsort:
+
+```bash
+brew install tfsort
+```
+
+### Binary release
+
 To install tfsort, you can download the latest binary release from the [releases page](https://github.com/AlexNabokikh/tfsort/releases).
-Alternatively, you can build from source by cloning the repository and running `go build`.
+
+Alternatively, you can build from the source by cloning the repository and running `go build`.
 
 ## Usage
 
