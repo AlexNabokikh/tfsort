@@ -135,5 +135,4 @@ func TestValidateFilePath(t *testing.T) {
 
 	// cleanup
 	os.Remove("invalid_file.txt")
-	os.Remove("unreadable_file.tf")
 }
