@@ -24,10 +24,8 @@ jobs:
         run: go vet ./tsort
 
       - name: Test with Coverage
-        run: go test -v -coverprofile=coverage.out ./...
+        run: go test -v ./...
 
       - name: Coverage Report
         uses: ncruces/go-coverage-report@main
         if: github.ref == 'refs/heads/master'
-        with:
-          coverage_path: coverage.out
