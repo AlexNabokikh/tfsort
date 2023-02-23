@@ -1,6 +1,7 @@
 package tsort
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -63,10 +64,7 @@ func (i *Ingestor) Parse(path string, outputPath string, dry bool) error {
 
 	pattern := regexp.MustCompile(`(?:variable|output) "([\w\d]+)" {\n[\w\W]+?\n}`)
 
-	content, err := os.ReadFile(path)
-	if err != nil {
-		return fmt.Errorf("error reading file '%s': %w", path, err)
-	}
+	content, _ := os.ReadFile(path)
 
 	matches := pattern.FindAllString(string(content), -1)
 	sort.Slice(matches, func(i, j int) bool {
@@ -79,14 +77,14 @@ func (i *Ingestor) Parse(path string, outputPath string, dry bool) error {
 
 	switch {
 	case outputPath != "":
-		err = os.WriteFile(outputPath, []byte(output), 0o644)
+		err := os.WriteFile(outputPath, []byte(output), 0o644)
 		if err != nil {
 			return fmt.Errorf("error writing output to file '%s': %w", outputPath, err)
 		}
 	case dry:
 		fmt.Println(output)
 	default:
-		err = os.WriteFile(path, []byte(output), 0o644)
+		err := os.WriteFile(path, []byte(output), 0o644)
 		if err != nil {
 			return fmt.Errorf("error writing output to file '%s': %w", path, err)
 		}
@@ -98,19 +96,17 @@ func (i *Ingestor) Parse(path string, outputPath string, dry bool) error {
 // validateFilePath checks that the given file path is valid and points to an existing file.
 func ValidateFilePath(path string) error {
 	if path == "" {
-		return fmt.Errorf("file path is required")
+		return errors.New("file path is required")
 	}
 
 	info, err := os.Stat(path)
-	if err != nil {
-		return fmt.Errorf("error accessing file '%s': %w", path, err)
-	}
-
 	switch {
 	case os.IsNotExist(err):
-		return fmt.Errorf("file '%s' does not exist", path)
+		return errors.New("file does not exist")
+	case err != nil:
+		return fmt.Errorf("error accessing file '%s': %w", path, err)
 	case info.IsDir():
-		return fmt.Errorf("'%s' is a directory, not a file", path)
+		return errors.New("path is a directory, not a file")
 	default:
 		return nil
 	}
