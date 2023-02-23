@@ -15,6 +15,8 @@
 
 ![Demo](files/demo.gif)
 
+## Installation
+
 ### Homebrew
 
 To install tfsort using Homebrew, run the following command:
@@ -33,13 +35,15 @@ brew install tfsort
 
 ### Binary release
 
-To install tfsort, you can download the latest binary release from the [releases page](https://github.com/AlexNabokikh/tfsort/releases).
+To install `tfsort`, you can download the latest binary release from the [releases page](https://github.com/AlexNabokikh/tfsort/releases).
 
-Alternatively, you can build from the source by cloning the repository and running `go build`.
+### From source
+
+Alternatively, you can build `tfsort` from the source by cloning the repository and running `go build`.
 
 ## Usage
 
-The basic usage of tfsort is as follows:
+The basic usage of `tfsort` is as follows:
 
 ```bash
 tfsort --file <path-to-tf-file> [--out <path-to-output-file>] [--dry-run]
@@ -53,7 +57,7 @@ Available flags:
 
 ## Examples
 
-Here's an example of using tfsort to sort a Terraform file called `main.tf`:
+Here's an example of using `tfsort` to sort a Terraform file called `main.tf`:
 
 ```bash
 tfsort variables.tf
