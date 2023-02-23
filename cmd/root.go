@@ -12,7 +12,7 @@ func Execute() {
 	var outputPath string
 	var dryRun bool
 
-	var rootCmd = &cobra.Command{
+	rootCmd := &cobra.Command{
 		Use:   "tfsort [file]",
 		Short: "A utility to sort Terraform variables and outputs",
 		Args:  cobra.MaximumNArgs(1),

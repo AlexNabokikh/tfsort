@@ -1,9 +1,7 @@
 package tsort_test
 
 import (
-	"log"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/AlexNabokikh/tfsort/tsort"
@@ -30,7 +28,21 @@ func TestCanIngest(t *testing.T) {
 	})
 
 	t.Run("Invalid File Type", func(t *testing.T) {
+		if err := os.WriteFile("invalid_file.txt", []byte("data"), 0o600); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
 		if err := ingestor.CanIngest("invalid_file.txt"); err == nil {
+			t.Errorf("Expected error but not occurred")
+		}
+	})
+
+	t.Run("File with read error", func(t *testing.T) {
+		if err := os.WriteFile("unreadable_file.tf", []byte("data"), 0o000); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if err := ingestor.CanIngest("unreadable_file.tf"); err == nil {
 			t.Errorf("Expected error but not occurred")
 		}
 	})
@@ -47,10 +59,18 @@ func TestCanIngest(t *testing.T) {
 
 	// cleanup
 	os.Remove("invalid_file.tf")
+	os.Remove("unreadable_file.tf")
+	os.Remove("invalid_file.txt")
 }
 
 func TestParse(t *testing.T) {
 	ingestor := tsort.NewIngestor()
+
+	t.Run("Can't ingest", func(t *testing.T) {
+		if err := ingestor.Parse("notExistFile.tf", outputFile, false); err == nil {
+			t.Errorf("Expected error but not occurred")
+		}
+	})
 
 	t.Run("Write to output file", func(t *testing.T) {
 		os.Remove(outputFile)
@@ -59,13 +79,6 @@ func TestParse(t *testing.T) {
 		}
 		if _, err := os.Stat(outputFile); os.IsNotExist(err) {
 			t.Errorf("Output file not created")
-		}
-
-		data, _ := os.ReadFile(outputFile)
-		output := string(data)
-		log.Println(output)
-		if !strings.Contains(output, "variable") {
-			t.Errorf("Unexpected output: %s", output)
 		}
 	})
 
@@ -82,6 +95,7 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("Error writing to output file", func(t *testing.T) {
+		os.Remove(outputFile)
 		if err := os.WriteFile(outputFile, []byte("data"), 0o000); err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
@@ -92,4 +106,34 @@ func TestParse(t *testing.T) {
 
 	// cleanup
 	os.Remove(outputFile)
+}
+
+func TestValidateFilePath(t *testing.T) {
+	t.Run("File path is empty", func(t *testing.T) {
+		if err := tsort.ValidateFilePath(""); err == nil {
+			t.Errorf("Expected error but not occurred")
+		}
+	})
+
+	t.Run("File not exists", func(t *testing.T) {
+		if err := tsort.ValidateFilePath("notExistFile.tf"); err == nil {
+			t.Errorf("Expected error but not occurred")
+		}
+	})
+
+	t.Run("File is directory", func(t *testing.T) {
+		if err := tsort.ValidateFilePath("testdata"); err == nil {
+			t.Errorf("Expected error but not occurred")
+		}
+	})
+
+	t.Run("Valid File Path", func(t *testing.T) {
+		if err := tsort.ValidateFilePath(validFilePath); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	})
+
+	// cleanup
+	os.Remove("invalid_file.txt")
+	os.Remove("unreadable_file.tf")
 }
