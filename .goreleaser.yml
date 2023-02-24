@@ -34,6 +34,28 @@ brews:
       name: Alex Nabokikh
       email: nabokikh@duck.com
 
+chocolateys:
+  - name: tfsort
+    title: tfsort
+    authors: Alexander Nabokikh
+    project_url: https://github.com/AlexNabokikh/tfsort
+    url_template: "https://github.com/AlexNabokikh/tfsort/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    copyright: 2023 Alexander Nabokikh
+    license_url: https://github.com/AlexNabokikh/tfsort/blob/master/LICENSE
+    require_license_acceptance: false
+    project_source_url: https://github.com/AlexNabokikh/tfsort
+    docs_url: https://github.com/AlexNabokikh/tfsort/blob/master/README.md
+    bug_tracker_url: https://github.com/AlexNabokikh/tfsort/issues
+    summary: A CLI utility to sort Terraform variables and outputs.
+    description: |
+      {{ .ProjectName }} installer package.
+      A CLI utility to sort Terraform variables and outputs.
+    release_notes: "https://github.com/foo/bar/releases/tag/v{{ .Version }}"
+    api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
+    source_repo: "https://push.chocolatey.org/"
+    skip_publish: false
+    goamd64: v1
+
 checksum:
   name_template: "checksums.txt"
 
