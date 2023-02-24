@@ -51,7 +51,7 @@ chocolateys:
       {{ .ProjectName }} installer package.
       A CLI utility to sort Terraform variables and outputs.
     release_notes: "https://github.com/foo/bar/releases/tag/v{{ .Version }}"
-    api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
+    api_key: "{{ secrets.CHOCOLATEY_API_KEY }}"
     source_repo: "https://push.chocolatey.org/"
     skip_publish: false
     goamd64: v1
