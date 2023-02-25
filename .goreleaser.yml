@@ -36,7 +36,7 @@ brews:
 
 chocolateys:
   - name: tfsort
-    title: tfsort
+    title: tfsort a CLI utility to sort Terraform variables and outputs
     authors: Alexander Nabokikh
     project_url: https://github.com/AlexNabokikh/tfsort
     url_template: "https://github.com/AlexNabokikh/tfsort/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
@@ -46,11 +46,12 @@ chocolateys:
     project_source_url: https://github.com/AlexNabokikh/tfsort
     docs_url: https://github.com/AlexNabokikh/tfsort/blob/master/README.md
     bug_tracker_url: https://github.com/AlexNabokikh/tfsort/issues
+    tags: "terraform tf tfsort cli cross-platform"
     summary: A CLI utility to sort Terraform variables and outputs.
     description: |
       {{ .ProjectName }} installer package.
       A CLI utility to sort Terraform variables and outputs.
-    release_notes: "https://github.com/foo/bar/releases/tag/v{{ .Version }}"
+    release_notes: "https://github.com/AlexNabokikh/tfsort/releases/tag/v{{ .Version }}"
     api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
     source_repo: "https://push.chocolatey.org/"
     skip_publish: false
