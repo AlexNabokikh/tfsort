@@ -10,12 +10,13 @@ import (
 	"strings"
 )
 
+// Ingestor is a struct that contains the logic for parsing Terraform files.
 type Ingestor struct {
 	AllowedTypes  map[string]bool
 	AllowedBlocks map[string]bool
 }
 
-// Ingestor constructor that sets the default values for the allowed file types and blocks.
+// Ingestor returns a new Ingestor instance.
 func NewIngestor() *Ingestor {
 	return &Ingestor{
 		AllowedTypes: map[string]bool{
@@ -93,7 +94,7 @@ func (i *Ingestor) Parse(path string, outputPath string, dry bool) error {
 	return nil
 }
 
-// validateFilePath checks that the given file path is valid and points to an existing file.
+// validateFilePath returns an error if the given path is empty, does not exist, or is a directory.
 func ValidateFilePath(path string) error {
 	if path == "" {
 		return errors.New("file path is required")
