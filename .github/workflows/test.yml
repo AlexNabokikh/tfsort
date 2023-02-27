@@ -1,4 +1,4 @@
-name: Test
+name: test
 on:
   push:
     branches:
@@ -23,9 +23,9 @@ jobs:
       - name: Go Vet
         run: go vet ./tsort
 
-      - name: Test with Coverage
-        run: go test -v ./...
-
-      - name: Coverage Report
-        uses: ncruces/go-coverage-report@main
-        if: github.ref == 'refs/heads/master'
+      - name: Code Climate Coverage Action
+        uses: paambaati/codeclimate-action@v3.2.0
+        env:
+          CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
+        with:
+          coverageCommand: go test -v ./... -coverprofile c.out
