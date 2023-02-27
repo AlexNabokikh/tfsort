@@ -20,11 +20,8 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
-      - name: Go Vet
-        run: go vet ./tsort
-
       - name: Go Test
-        run: go test -v ./...
+        run: make test
 
   coverage:
     runs-on: ubuntu-latest
@@ -43,7 +40,7 @@ jobs:
         env:
           CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
         with:
-          coverageCommand: go test -v ./... -coverprofile c.out
+          coverageCommand: make coverage
           prefix: ${{ github.event.repository.name }}
           coverageLocations: "${{github.workspace}}/c.out:gocov"
         if: github.ref == 'refs/heads/master'

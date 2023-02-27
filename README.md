@@ -1,9 +1,10 @@
 # tfsort
 
-[![badge-gh-release](https://github.com/AlexNabokikh/tfsort/actions/workflows/release.yml/badge.svg)](https://github.com/AlexNabokikh/tfsort/actions/workflows/release.yml/badge.svg)
-[![badge-gh-tests](https://github.com/AlexNabokikh/tfsort/actions/workflows/test.yml/badge.svg)](https://github.com/AlexNabokikh/tfsort/actions/workflows/test.yml/badge.svg)
 [![go-report-card](https://goreportcard.com/badge/github.com/AlexNabokikh/tfsort)](https://goreportcard.com/report/github.com/AlexNabokikh/tfsort)
-[![go-test-coverage](https://github.com/AlexNabokikh/tfsort/wiki/coverage.svg)](https://raw.githack.com/wiki/AlexNabokikh/tfsort/coverage.html)
+[![maintainability](https://api.codeclimate.com/v1/badges/7d6a9fee7a8775dea0d8/maintainability)](https://codeclimate.com/github/AlexNabokikh/tfsort/maintainability)
+[![test-coverage](https://api.codeclimate.com/v1/badges/7d6a9fee7a8775dea0d8/test_coverage)](https://codeclimate.com/github/AlexNabokikh/tfsort/test_coverage)
+[![badge-gh-release](https://github.com/AlexNabokikh/tfsort/actions/workflows/release.yml/badge.svg)](https://github.com/AlexNabokikh/tfsort/actions/workflows/release.yml/badge.svg)
+[![badge-gh-ci](https://github.com/AlexNabokikh/tfsort/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexNabokikh/tfsort/actions/workflows/ci.yml/badge.svg)
 
 ![Logo](files/logo.png)
 
