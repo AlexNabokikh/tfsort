@@ -30,3 +30,4 @@ jobs:
         with:
           coverageCommand: go test -v ./... -coverprofile c.out
           prefix: github.com/AlexNabokikh/tfsort/tsort
+        if: github.ref == 'refs/heads/master'
