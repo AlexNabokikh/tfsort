@@ -1,4 +1,4 @@
-name: Test
+name: ci
 on:
   push:
     branches:
@@ -23,9 +23,27 @@ jobs:
       - name: Go Vet
         run: go vet ./tsort
 
-      - name: Test with Coverage
+      - name: Go Test
         run: go test -v ./...
 
-      - name: Coverage Report
-        uses: ncruces/go-coverage-report@main
+  coverage:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+
+      - name: Code Climate Coverage Action
+        uses: paambaati/codeclimate-action@v3.2.0
+        env:
+          CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
+        with:
+          coverageCommand: go test -v ./... -coverprofile c.out
+          prefix: ${{ github.event.repository.name }}
+          coverageLocations: "${{github.workspace}}/c.out:gocov"
         if: github.ref == 'refs/heads/master'
