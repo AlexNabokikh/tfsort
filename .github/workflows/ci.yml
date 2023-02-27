@@ -43,4 +43,4 @@ jobs:
           coverageCommand: make coverage
           prefix: ${{ github.event.repository.name }}
           coverageLocations: "${{github.workspace}}/c.out:gocov"
-        # if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/master'
