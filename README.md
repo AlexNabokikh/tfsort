@@ -1,10 +1,10 @@
 # tfsort
 
+[![badge-gh-ci](https://github.com/AlexNabokikh/tfsort/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexNabokikh/tfsort/actions/workflows/ci.yml/badge.svg)
+[![badge-gh-release](https://github.com/AlexNabokikh/tfsort/actions/workflows/release.yml/badge.svg)](https://github.com/AlexNabokikh/tfsort/actions/workflows/release.yml/badge.svg)
 [![go-report-card](https://goreportcard.com/badge/github.com/AlexNabokikh/tfsort)](https://goreportcard.com/report/github.com/AlexNabokikh/tfsort)
 [![maintainability](https://api.codeclimate.com/v1/badges/7d6a9fee7a8775dea0d8/maintainability)](https://codeclimate.com/github/AlexNabokikh/tfsort/maintainability)
 [![test-coverage](https://api.codeclimate.com/v1/badges/7d6a9fee7a8775dea0d8/test_coverage)](https://codeclimate.com/github/AlexNabokikh/tfsort/test_coverage)
-[![badge-gh-release](https://github.com/AlexNabokikh/tfsort/actions/workflows/release.yml/badge.svg)](https://github.com/AlexNabokikh/tfsort/actions/workflows/release.yml/badge.svg)
-[![badge-gh-ci](https://github.com/AlexNabokikh/tfsort/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexNabokikh/tfsort/actions/workflows/ci.yml/badge.svg)
 
 ![Logo](files/logo.png)
 
@@ -20,7 +20,7 @@
 
 ### Homebrew
 
-To install tfsort using Homebrew, run the following command:
+To install `tfsort` using Homebrew, run the following command:
 
 1. Add the tap:
 
@@ -28,10 +28,18 @@ To install tfsort using Homebrew, run the following command:
 brew tap alexnabokikh/tfsort
 ```
 
-2. Install tfsort:
+2. Install `tfsort`:
 
 ```bash
 brew install tfsort
+```
+
+### Chocolatey (Windows)
+
+To install `tfsort` using Chocolatey, run the following command:
+
+```bash
+choco install tfsort
 ```
 
 ### Binary release

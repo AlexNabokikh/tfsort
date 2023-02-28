@@ -1,0 +1,70 @@
+---
+version: "2"
+
+checks:
+  argument-count:
+    config:
+      threshold: 4
+  complex-logic:
+    config:
+      threshold: 4
+  file-lines:
+    config:
+      threshold: 500
+  method-complexity:
+    enabled: false
+    config:
+      threshold: 20
+  method-count:
+    enabled: false
+    config:
+      threshold: 20
+  method-lines:
+    enabled: false
+    config:
+      threshold: 50
+  nested-control-flow:
+    config:
+      threshold: 4
+  return-statements:
+    config:
+      threshold: 10
+  similar-code:
+    config:
+      threshold: # language-specific defaults. an override will affect all languages.
+  identical-code:
+    config:
+      threshold: # language-specific defaults. an override will affect all languages.
+
+plugins:
+  gofmt:
+    enabled: true
+  govet:
+    enabled: true
+  markdownlint:
+    enabled: true
+  shellcheck:
+    enabled: true
+  fixme:
+    enabled: true
+    config:
+      strings:
+        - FIXME
+        - BUG
+        - HACK
+
+exclude_patterns:
+  - "config/"
+  - "db/"
+  - "dist/"
+  - "features/"
+  - "**/node_modules/"
+  - "script/"
+  - "**/spec/"
+  - "**/test/"
+  - "**/tests/"
+  - "Tests/"
+  - "**/vendor/"
+  - "**/*_test.go"
+  - "**/*.d.ts"
+  - "examples"
