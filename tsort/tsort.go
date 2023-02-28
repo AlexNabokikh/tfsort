@@ -74,6 +74,7 @@ func (i *Ingestor) Parse(path string, outputPath string, dry bool) error {
 
 		return nameI < nameJ
 	})
+
 	output := strings.Join(matches, "\n\n") + "\n"
 
 	switch {
@@ -101,6 +102,7 @@ func ValidateFilePath(path string) error {
 	}
 
 	info, err := os.Stat(path)
+
 	switch {
 	case os.IsNotExist(err):
 		return errors.New("file does not exist")

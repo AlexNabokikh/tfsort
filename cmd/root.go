@@ -9,9 +9,11 @@ import (
 
 // Execute is the entry point for the CLI.
 func Execute() {
-	var filePath string
-	var outputPath string
-	var dryRun bool
+	var (
+		filePath   string
+		outputPath string
+		dryRun     bool
+	)
 
 	rootCmd := &cobra.Command{
 		Use:   "tfsort [file]",
