@@ -20,7 +20,7 @@
 
 ### Homebrew
 
-To install tfsort using Homebrew, run the following command:
+To install `tfsort` using Homebrew, run the following command:
 
 1. Add the tap:
 
@@ -28,10 +28,18 @@ To install tfsort using Homebrew, run the following command:
 brew tap alexnabokikh/tfsort
 ```
 
-2. Install tfsort:
+2. Install `tfsort`:
 
 ```bash
 brew install tfsort
+```
+
+### Chocolatey (Windows)
+
+To install `tfsort` using Chocolatey, run the following command:
+
+```bash
+choco install tfsort
 ```
 
 ### Binary release
