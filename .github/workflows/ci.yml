@@ -1,40 +1,57 @@
-name: ci
+name: CI
 on:
   push:
     branches:
-      - "*"
+      - master
+  pull_request:
 
 jobs:
-  test:
+  golangci-lint:
+    name: golangci-lint
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
           go-version: 1.19
+      - name: Lint
+        uses: golangci/golangci-lint-action@v3
 
+  tests:
+    name: Tests
+    needs: golangci-lint
+    strategy:
+      matrix:
+        go:
+          - 1.19
+        os:
+          - ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
       - name: Install dependencies
         run: go mod download
-
       - name: Go Test
         run: make test
 
   coverage:
+    name: Coverage
+    needs: tests
     runs-on: ubuntu-latest
-    needs: test
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
           go-version: 1.19
-
       - name: Code Climate Coverage Action
         uses: paambaati/codeclimate-action@v3.2.0
         env:
@@ -43,4 +60,3 @@ jobs:
           coverageCommand: make coverage
           prefix: ${{ github.event.repository.name }}
           coverageLocations: "${{github.workspace}}/c.out:gocov"
-        if: github.ref == 'refs/heads/master'
