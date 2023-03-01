@@ -12,6 +12,17 @@
 
 `tfsort` also corrects any spacing issues between the blocks and removes any leading or trailing new lines in the file.
 
+## Contents
+
+- [demo](#demo)
+- [installation](#installation)
+  - [homebrew](#homebrew)
+  - [chocolatey (windows)](#chocolatey-windows)
+  - [binary release](#binary-release)
+  - [from source](#from-source)
+- [usage](#usage)
+- [examples](#examples)
+
 ## Demo
 
 ![Demo](files/demo.gif)
