@@ -19,8 +19,8 @@ Want to contribute? Great! First, read this page.
 
 ### Code style and conventions
 
-- Use [Ansible lint](https://github.com/ansible/ansible-lint) and [YAML lint](https://github.com/adrienverge/yamllint) to check code style.
-- Respect the `.ansible-lint` and `.yamllint.yml` files specified in the source tree.
+- Use [golangci](https://github.com/golangci/golangci-lint) to check code style.
+- Respect the rules in `.golangci.yaml` specified in the source tree.
 
 ### Fix wrong commit
 

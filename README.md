@@ -22,13 +22,13 @@
 
 To install `tfsort` using Homebrew, run the following command:
 
-1. Add the tap:
+- Add the tap
 
 ```bash
 brew tap alexnabokikh/tfsort
 ```
 
-2. Install `tfsort`:
+- Install `tfsort`
 
 ```bash
 brew install tfsort
@@ -80,6 +80,12 @@ tfsort --file variables.tf --out sorted.tf
 ```
 
 This will create a new file called `sorted.tf` with the sorted resources.
+
+```bash
+tfsort variables.tf --dry-run
+```
+
+This will print the sorted resources to the console without altering the original file.
 
 ## Author
 
