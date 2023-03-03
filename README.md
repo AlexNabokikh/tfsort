@@ -66,12 +66,11 @@ Alternatively, you can build `tfsort` from the source by cloning the repository 
 The basic usage of `tfsort` is as follows:
 
 ```bash
-tfsort --file <path-to-tf-file> [--out <path-to-output-file>] [--dry-run]
+tfsort <path-to-tf-file> [--out <path-to-output-file>] [--dry-run]
 ```
 
 Available flags:
 
-- `--file`: the path to the .tf file you want to sort. This flag is optional.
 - `--out`: the path to the output file. If not provided, tfsort will overwrite the input file.
 - `--dry-run`: preview the changes without altering the original file.
 
