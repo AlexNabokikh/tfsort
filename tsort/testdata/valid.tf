@@ -37,6 +37,11 @@ variable "additional_userdata" {
 
 
 
+terraform {
+  required_version = ">= 0.12"
+}
+
+
 
 
 variable "eks_shared_namespaces" {
@@ -52,3 +57,21 @@ variable "eks_shared_namespaces" {
     newrelic   = ["newrelic"]
   }
 }
+
+
+locals {
+  kubernetes_pipeline_roles = [
+    for role in var.kubernetes_pipeline_roles : {
+      rolearn    = role.rolearn
+      namespaces = role.namespaces
+    }
+  ]
+}
+
+
+
+
+
+
+
+
