@@ -40,6 +40,7 @@ chocolateys:
     authors: Alexander Nabokikh
     project_url: https://github.com/AlexNabokikh/tfsort
     url_template: "https://github.com/AlexNabokikh/tfsort/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    icon_url: "https://rawcdn.githack.com/AlexNabokikh/tfsort/751bf0ae4423f88e33309ccaf9ea2187d04245c3/files/icon.png"
     copyright: 2023 Alexander Nabokikh
     license_url: https://github.com/AlexNabokikh/tfsort/blob/master/LICENSE
     require_license_acceptance: false
