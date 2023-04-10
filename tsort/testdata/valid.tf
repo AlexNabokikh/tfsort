@@ -26,7 +26,7 @@ variable "external_dns_additional_managed_zones" {
   default     = []
 }
 
-variable "aws_profile" {
+variable "aws-profile" {
   description = "The aws profile name, used when creating the kubeconfig file."
 }
 
@@ -58,6 +58,12 @@ variable "eks_shared_namespaces" {
   }
 }
 
+output "hardened-image-id" {
+  description = "The AMI ID of the hardened image."
+  value       = data.aws_ami.hardened.id
+}
+
+
 
 locals {
   kubernetes_pipeline_roles = [
@@ -70,8 +76,7 @@ locals {
 
 
 
-
-
-
-
-
+output "private_key_name" {
+  description = "The name of the private key made to share."
+  value       = module.account.private_key_name
+}
