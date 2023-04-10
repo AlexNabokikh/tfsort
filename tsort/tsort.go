@@ -63,7 +63,7 @@ func (i *Ingestor) Parse(path string, outputPath string, dry bool) error {
 		return err
 	}
 
-	pattern := regexp.MustCompile(`(?:(?:variable|output) "([\w\d]+)" {\n[\w\W]+?\n})|(?:\w+\s*{\n[\w\W]+?\n})`)
+	pattern := regexp.MustCompile(`(?:(?:variable|output) "([\w\d\-]+)" {\n[\w\W]+?\n})|(?:\w+\s*{\n[\w\W]+?\n})`)
 
 	content, _ := os.ReadFile(path)
 

@@ -80,6 +80,13 @@ func TestParse(t *testing.T) {
 		if _, err := os.Stat(outputFile); os.IsNotExist(err) {
 			t.Errorf("Output file not created")
 		}
+
+		outFile, _ := os.ReadFile(outputFile)
+		expectedFile, _ := os.ReadFile("testdata/expected.tf")
+
+		if string(outFile) != string(expectedFile) {
+			t.Errorf("Output file content is not as expected")
+		}
 	})
 
 	t.Run("Write to stdout", func(t *testing.T) {
