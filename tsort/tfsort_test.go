@@ -1,6 +1,7 @@
 package tsort_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -101,18 +102,59 @@ func TestParse(t *testing.T) {
 		}
 	})
 
-	t.Run("Error writing to output file", func(t *testing.T) {
-		os.Remove(outputFile)
-		if err := os.WriteFile(outputFile, []byte("data"), 0o000); err != nil {
+	t.Run("Error writing to output file in Parse", func(t *testing.T) {
+		if err := os.WriteFile("testdata/valid.tf", []byte("data"), 0o644); err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
-		if err := ingestor.Parse(validFilePath, outputFile, false); err == nil {
+		os.Chmod("testdata/valid.tf", 0o000)
+		defer os.Chmod("testdata/valid.tf", 0o644)
+
+		if err := ingestor.Parse("testdata/valid.tf", "testdata/valid.tf", false); err == nil {
 			t.Errorf("Expected error but not occurred")
 		}
 	})
 
 	// cleanup
 	os.Remove(outputFile)
+}
+
+func TestParseAll(t *testing.T) {
+	ingestor := tsort.NewIngestor()
+
+	t.Run("Valid Directory", func(t *testing.T) {
+		if err := ingestor.ParseAll("testdata/recursive", false); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+		for _, file := range []string{"valid.tf", "valid1.tf", "valid2.tf"} {
+			filePath := fmt.Sprintf("testdata/recursive/%s", file)
+			expectedFile, _ := os.ReadFile("testdata/expected.tf")
+			outFile, _ := os.ReadFile(filePath)
+
+			if string(outFile) != string(expectedFile) {
+				t.Errorf("Output file content in '%s' is not as expected", filePath)
+			}
+		}
+	})
+
+	t.Run("Write to stdout", func(t *testing.T) {
+		if err := ingestor.ParseAll("testdata/recursive", true); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	})
+
+	t.Run("Error accessing file", func(t *testing.T) {
+		if err := ingestor.ParseAll("nonexistent_directory", false); err == nil {
+			t.Errorf("Expected error but not occurred")
+		}
+	})
+
+	//cleanup
+	for _, file := range []string{"valid.tf", "valid1.tf", "valid2.tf"} {
+		filePath := fmt.Sprintf("testdata/recursive/%s", file)
+		if err := os.WriteFile(filePath, []byte("data"), 0o644); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	}
 }
 
 func TestValidateFilePath(t *testing.T) {
@@ -124,12 +166,6 @@ func TestValidateFilePath(t *testing.T) {
 
 	t.Run("File not exists", func(t *testing.T) {
 		if err := tsort.ValidateFilePath("notExistFile.tf"); err == nil {
-			t.Errorf("Expected error but not occurred")
-		}
-	})
-
-	t.Run("File is directory", func(t *testing.T) {
-		if err := tsort.ValidateFilePath("testdata"); err == nil {
 			t.Errorf("Expected error but not occurred")
 		}
 	})

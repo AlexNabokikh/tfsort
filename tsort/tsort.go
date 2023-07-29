@@ -3,6 +3,7 @@ package tsort
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -33,7 +34,8 @@ func NewIngestor() *Ingestor {
 // CanIngest reads the file at the given path and checks if it is a valid Terraform file
 // based on its extension and contents.
 func (i *Ingestor) CanIngest(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	info, err := os.Stat(path)
+	if err != nil || info.IsDir() {
 		return fmt.Errorf("can't open file '%s': no such file or directory", path)
 	}
 
@@ -95,7 +97,22 @@ func (i *Ingestor) Parse(path string, outputPath string, dry bool) error {
 	return nil
 }
 
-// validateFilePath returns an error if the given path is empty, does not exist, or is a directory.
+// Parses all files within the given path (including subdirectories).
+func (i *Ingestor) ParseAll(path string, dry bool) error {
+	return filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
+		switch {
+		case err != nil:
+			return fmt.Errorf("error accessing file '%s': %w", path, err)
+		case info.IsDir():
+			return nil
+		case filepath.Ext(path) == ".tf" || filepath.Ext(path) == ".hcl":
+			return i.Parse(path, "", dry)
+		default:
+			return nil
+		}
+	})
+}
+
 func ValidateFilePath(path string) error {
 	if path == "" {
 		return errors.New("file path is required")
@@ -109,7 +126,7 @@ func ValidateFilePath(path string) error {
 	case err != nil:
 		return fmt.Errorf("error accessing file '%s': %w", path, err)
 	case info.IsDir():
-		return errors.New("path is a directory, not a file")
+		return nil
 	default:
 		return nil
 	}
