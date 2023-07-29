@@ -38,9 +38,10 @@ func Execute() {
 			if recursive {
 				// Ignore the outputPath when in recursive mode
 				return i.ParseAll(filePath, dryRun)
-			} else {
-				return i.Parse(filePath, outputPath, dryRun)
 			}
+
+			return i.Parse(filePath, outputPath, dryRun)
+
 		},
 	}
 

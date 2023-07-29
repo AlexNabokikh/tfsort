@@ -142,7 +142,7 @@ func TestParseAll(t *testing.T) {
 		}
 	})
 
-	//cleanup
+	// cleanup
 	for _, file := range []string{"valid.tf", "valid1.tf", "valid2.tf"} {
 		filePath := fmt.Sprintf("testdata/recursive/%s", file)
 		if err := os.WriteFile(filePath, originalContent, 0o644); err != nil {
