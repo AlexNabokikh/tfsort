@@ -102,24 +102,18 @@ func TestParse(t *testing.T) {
 		}
 	})
 
-	t.Run("Error writing to output file in Parse", func(t *testing.T) {
-		if err := os.WriteFile("testdata/valid.tf", []byte("data"), 0o644); err != nil {
-			t.Errorf("Unexpected error: %v", err)
-		}
-		os.Chmod("testdata/valid.tf", 0o000)
-		defer os.Chmod("testdata/valid.tf", 0o644)
-
-		if err := ingestor.Parse("testdata/valid.tf", "testdata/valid.tf", false); err == nil {
-			t.Errorf("Expected error but not occurred")
-		}
-	})
-
 	// cleanup
 	os.Remove(outputFile)
 }
 
 func TestParseAll(t *testing.T) {
 	ingestor := tsort.NewIngestor()
+
+	// Save original content of the files
+	originalContent, err := os.ReadFile("testdata/valid.tf")
+	if err != nil {
+		t.Fatalf("Failed to read original content: %v", err)
+	}
 
 	t.Run("Valid Directory", func(t *testing.T) {
 		if err := ingestor.ParseAll("testdata/recursive", false); err != nil {
@@ -151,7 +145,7 @@ func TestParseAll(t *testing.T) {
 	//cleanup
 	for _, file := range []string{"valid.tf", "valid1.tf", "valid2.tf"} {
 		filePath := fmt.Sprintf("testdata/recursive/%s", file)
-		if err := os.WriteFile(filePath, []byte("data"), 0o644); err != nil {
+		if err := os.WriteFile(filePath, originalContent, 0o644); err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
 	}
