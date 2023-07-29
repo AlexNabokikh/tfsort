@@ -97,6 +97,7 @@ linters:
   enable-all: true
   disable:
     - deadcode
+    - depguard
     - exhaustivestruct
     - exhaustruct
     - forbidigo
