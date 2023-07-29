@@ -41,7 +41,6 @@ func Execute() {
 			}
 
 			return i.Parse(filePath, outputPath, dryRun)
-
 		},
 	}
 
