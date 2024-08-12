@@ -74,9 +74,11 @@ func TestParse(t *testing.T) {
 
 	t.Run("Write to output file", func(t *testing.T) {
 		os.Remove(outputFile)
+
 		if err := ingestor.Parse(validFilePath, outputFile, false); err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
+
 		if _, err := os.Stat(outputFile); os.IsNotExist(err) {
 			t.Errorf("Output file not created")
 		}
@@ -91,11 +93,15 @@ func TestParse(t *testing.T) {
 
 	t.Run("Write to stdout", func(t *testing.T) {
 		os.Remove(outputFile)
+
 		outputPath := ""
+
 		if err := ingestor.Parse(validFilePath, outputPath, true); err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
+
 		outputFileInfo, err := os.Stat(outputFile)
+
 		if outputFileInfo != nil || !os.IsNotExist(err) {
 			t.Errorf("output file should not be created")
 		}
@@ -103,9 +109,11 @@ func TestParse(t *testing.T) {
 
 	t.Run("Error writing to output file", func(t *testing.T) {
 		os.Remove(outputFile)
+
 		if err := os.WriteFile(outputFile, []byte("data"), 0o000); err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
+
 		if err := ingestor.Parse(validFilePath, outputFile, false); err == nil {
 			t.Errorf("Expected error but not occurred")
 		}
