@@ -28,7 +28,7 @@ brews:
   - name: tfsort
     description: "Sort Terraform files"
     homepage: "https://github.com/AlexNabokikh/tfsort"
-    tap:
+    repository:
       owner: alexnabokikh
       name: homebrew-tfsort
     commit_author:
