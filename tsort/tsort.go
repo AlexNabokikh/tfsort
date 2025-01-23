@@ -20,8 +20,9 @@ type Ingestor struct {
 func NewIngestor() *Ingestor {
 	return &Ingestor{
 		AllowedTypes: map[string]bool{
-			"tf":  true,
-			"hcl": true,
+			"tf":   true,
+			"hcl":  true,
+			"tofu": true,
 		},
 		AllowedBlocks: map[string]bool{
 			"variable": true,

@@ -9,6 +9,7 @@ import (
 
 const (
 	validFilePath = "testdata/valid.tf"
+	validTofuPath = "testdata/valid.tofu"
 	outputFile    = "output.tf"
 )
 
@@ -17,6 +18,12 @@ func TestCanIngest(t *testing.T) {
 
 	t.Run("Valid Terraform File", func(t *testing.T) {
 		if err := ingestor.CanIngest(validFilePath); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	})
+
+	t.Run("Valid OpenTofu File", func(t *testing.T) {
+		if err := ingestor.CanIngest(validTofuPath); err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
 	})
@@ -58,9 +65,15 @@ func TestCanIngest(t *testing.T) {
 	})
 
 	// cleanup
-	os.Remove("invalid_file.tf")
-	os.Remove("unreadable_file.tf")
-	os.Remove("invalid_file.txt")
+	if err := os.Remove("invalid_file.tf"); err != nil && !os.IsNotExist(err) {
+		t.Errorf("Failed to cleanup invalid_file.tf: %v", err)
+	}
+	if err := os.Remove("unreadable_file.tf"); err != nil && !os.IsNotExist(err) {
+		t.Errorf("Failed to cleanup unreadable_file.tf: %v", err)
+	}
+	if err := os.Remove("invalid_file.txt"); err != nil && !os.IsNotExist(err) {
+		t.Errorf("Failed to cleanup invalid_file.txt: %v", err)
+	}
 }
 
 func TestParse(t *testing.T) {
@@ -72,8 +85,10 @@ func TestParse(t *testing.T) {
 		}
 	})
 
-	t.Run("Write to output file", func(t *testing.T) {
-		os.Remove(outputFile)
+	t.Run("Write to output file from .tf", func(t *testing.T) {
+		if err := os.Remove(outputFile); err != nil && !os.IsNotExist(err) {
+			t.Fatalf("Failed to remove output file: %v", err)
+		}
 
 		if err := ingestor.Parse(validFilePath, outputFile, false); err != nil {
 			t.Errorf("Unexpected error: %v", err)
@@ -91,8 +106,31 @@ func TestParse(t *testing.T) {
 		}
 	})
 
+	t.Run("Write to output file from .tofu", func(t *testing.T) {
+		if err := os.Remove(outputFile); err != nil && !os.IsNotExist(err) {
+			t.Fatalf("Failed to remove output file: %v", err)
+		}
+
+		if err := ingestor.Parse(validTofuPath, outputFile, false); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if _, err := os.Stat(outputFile); os.IsNotExist(err) {
+			t.Errorf("Output file not created")
+		}
+
+		outFile, _ := os.ReadFile(outputFile)
+		expectedFile, _ := os.ReadFile("testdata/expected.tf")
+
+		if string(outFile) != string(expectedFile) {
+			t.Errorf("Output file content from .tofu is not as expected")
+		}
+	})
+
 	t.Run("Write to stdout", func(t *testing.T) {
-		os.Remove(outputFile)
+		if err := os.Remove(outputFile); err != nil && !os.IsNotExist(err) {
+			t.Fatalf("Failed to remove output file: %v", err)
+		}
 
 		outputPath := ""
 
@@ -108,7 +146,9 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("Error writing to output file", func(t *testing.T) {
-		os.Remove(outputFile)
+		if err := os.Remove(outputFile); err != nil && !os.IsNotExist(err) {
+			t.Fatalf("Failed to remove output file: %v", err)
+		}
 
 		if err := os.WriteFile(outputFile, []byte("data"), 0o000); err != nil {
 			t.Errorf("Unexpected error: %v", err)
@@ -120,7 +160,12 @@ func TestParse(t *testing.T) {
 	})
 
 	// cleanup
-	os.Remove(outputFile)
+	if err := os.Remove(outputFile); err != nil && !os.IsNotExist(err) {
+		t.Errorf("Failed to cleanup output file: %v", err)
+	}
+	if err := os.Remove("invalid_file.txt"); err != nil && !os.IsNotExist(err) {
+		t.Errorf("Failed to cleanup invalid_file.txt: %v", err)
+	}
 }
 
 func TestValidateFilePath(t *testing.T) {
@@ -142,12 +187,20 @@ func TestValidateFilePath(t *testing.T) {
 		}
 	})
 
-	t.Run("Valid File Path", func(t *testing.T) {
+	t.Run("Valid .tf File Path", func(t *testing.T) {
 		if err := tsort.ValidateFilePath(validFilePath); err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
 	})
 
+	t.Run("Valid .tofu File Path", func(t *testing.T) {
+		if err := tsort.ValidateFilePath(validTofuPath); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	})
+
 	// cleanup
-	os.Remove("invalid_file.txt")
+	if err := os.Remove("invalid_file.txt"); err != nil && !os.IsNotExist(err) {
+		t.Errorf("Failed to cleanup invalid_file.txt: %v", err)
+	}
 }
