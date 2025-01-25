@@ -9,6 +9,7 @@ import (
 
 const (
 	validFilePath = "testdata/valid.tf"
+	validTofuPath = "testdata/valid.tofu"
 	outputFile    = "output.tf"
 )
 
@@ -17,6 +18,12 @@ func TestCanIngest(t *testing.T) {
 
 	t.Run("Valid Terraform File", func(t *testing.T) {
 		if err := ingestor.CanIngest(validFilePath); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	})
+
+	t.Run("Valid OpenTofu File", func(t *testing.T) {
+		if err := ingestor.CanIngest(validTofuPath); err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
 	})
@@ -91,12 +98,47 @@ func TestParse(t *testing.T) {
 		}
 	})
 
+	t.Run("Write to output file from .tofu", func(t *testing.T) {
+		os.Remove(outputFile)
+
+		if err := ingestor.Parse(validTofuPath, outputFile, false); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if _, err := os.Stat(outputFile); os.IsNotExist(err) {
+			t.Errorf("Output file not created")
+		}
+
+		outFile, _ := os.ReadFile(outputFile)
+		expectedFile, _ := os.ReadFile("testdata/expected.tofu")
+
+		if string(outFile) != string(expectedFile) {
+			t.Errorf("Output file content is not as expected")
+		}
+	})
+
 	t.Run("Write to stdout", func(t *testing.T) {
 		os.Remove(outputFile)
 
 		outputPath := ""
 
 		if err := ingestor.Parse(validFilePath, outputPath, true); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		outputFileInfo, err := os.Stat(outputFile)
+
+		if outputFileInfo != nil || !os.IsNotExist(err) {
+			t.Errorf("output file should not be created")
+		}
+	})
+
+	t.Run("Write to stdout from .tofu", func(t *testing.T) {
+		os.Remove(outputFile)
+
+		outputPath := ""
+
+		if err := ingestor.Parse(validTofuPath, outputPath, true); err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
 

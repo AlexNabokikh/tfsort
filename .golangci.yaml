@@ -111,6 +111,7 @@ linters:
   enable-all: true
   disable:
     - copyloopvar
+    - cyclop
     - depguard
     - dupl
     - err113
@@ -119,6 +120,7 @@ linters:
     - forbidigo
     - funlen
     - gochecknoinits
+    - gocognit
     - goconst
     - godot
     - gofumpt
