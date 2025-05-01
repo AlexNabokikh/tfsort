@@ -1,22 +1,20 @@
 package tsort
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclparse"
+	"github.com/hashicorp/hcl/v2/hclwrite"
 )
 
-// Ingestor is a struct that contains the logic for parsing Terraform files.
-type Ingestor struct {
-	AllowedTypes  map[string]bool
-	AllowedBlocks map[string]bool
-}
-
-// Ingestor returns a new Ingestor instance.
+// NewIngestor returns a new Ingestor instance.
 func NewIngestor() *Ingestor {
 	return &Ingestor{
 		AllowedTypes: map[string]bool{
@@ -31,63 +29,105 @@ func NewIngestor() *Ingestor {
 	}
 }
 
-// CanIngest reads the file at the given path and checks if it is a valid Terraform file
-// based on its extension and contents.
+// CanIngest checks if the file extension is allowed.
 func (i *Ingestor) CanIngest(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return fmt.Errorf("can't open file '%s': no such file or directory", path)
 	}
 
-	extension := filepath.Ext(path)[1:]
-	if !i.AllowedTypes[extension] {
-		return fmt.Errorf("file %s is not a valid Terraform file", path)
+	extension := filepath.Ext(path)
+	if len(extension) > 0 {
+		extension = extension[1:]
 	}
 
-	content, err := os.ReadFile(path)
+	if !i.AllowedTypes[extension] {
+		if extension != "" {
+			return fmt.Errorf("file extension '%s' is not a supported Terraform/HCL type", extension)
+		}
+	}
+
+	return nil
+}
+
+// Parse extracts variable and output blocks from the Terraform file at the given path,
+// sorts them alphabetically by name, and writes the output.
+func (i *Ingestor) Parse(path string, outputPath string, dry bool) error {
+	if err := i.CanIngest(path); err != nil {
+		if !errors.Is(err, os.ErrNotExist) && !strings.Contains(err.Error(), "not a supported") {
+			return err
+		} else if errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+		fmt.Fprintf(os.Stderr, "Warning: %v\n", err)
+	}
+
+	src, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("error reading file '%s': %w", path, err)
 	}
 
-	for block := range i.AllowedBlocks {
-		if i.AllowedBlocks[block] && strings.Contains(string(content), block) {
-			return nil
+	parser := hclparse.NewParser()
+	_, diags := parser.ParseHCL(src, path)
+
+	if diags.HasErrors() {
+		return fmt.Errorf("error parsing HCL file '%s': %w", path, diags)
+	}
+
+	writeFile, diags := hclwrite.ParseConfig(src, path, hcl.Pos{Line: 1, Column: 1})
+	if diags.HasErrors() {
+		return fmt.Errorf("error parsing HCL for writing '%s': %w", path, diags)
+	}
+
+	body := writeFile.Body()
+	blocks := body.Blocks()
+	sortableBlocks := make([]*SortableBlock, 0)
+	otherTokens := []*hclwrite.Block{}
+
+	for _, block := range blocks {
+		blockType := block.Type()
+		if i.AllowedBlocks[blockType] && len(block.Labels()) > 0 {
+			sortableBlocks = append(sortableBlocks, &SortableBlock{
+				Name:  block.Labels()[0],
+				Block: block,
+			})
+		} else {
+			otherTokens = append(otherTokens, block)
 		}
 	}
 
-	return fmt.Errorf("file %s is not a valid Terraform file", path)
-}
-
-// Parse extracts variable and output blocks from the Terraform file at the given path,
-// sorts them alphabetically by name, and writes the output to the specified file or to stdout.
-func (i *Ingestor) Parse(path string, outputPath string, dry bool) error {
-	if err := i.CanIngest(path); err != nil {
-		return err
-	}
-
-	pattern := regexp.MustCompile(`(?:(?:variable|output) "([\w\d\-]+)" {\n[\w\W]+?\n})|(?:\w+\s*{\n[\w\W]+?\n})`)
-
-	content, _ := os.ReadFile(path)
-
-	matches := pattern.FindAllString(string(content), -1)
-	sort.Slice(matches, func(i, j int) bool {
-		nameI := pattern.FindAllStringSubmatch(matches[i], 1)[0][1]
-		nameJ := pattern.FindAllStringSubmatch(matches[j], 1)[0][1]
-
-		return nameI < nameJ
+	sort.Slice(sortableBlocks, func(i, j int) bool {
+		return sortableBlocks[i].Name < sortableBlocks[j].Name
 	})
 
-	output := strings.Join(matches, "\n\n") + "\n"
+	body.Clear()
+
+	for i, block := range otherTokens {
+		body.AppendBlock(block)
+		if i < len(otherTokens)-1 || len(sortableBlocks) > 0 {
+			body.AppendNewline()
+		}
+	}
+
+	for i, sb := range sortableBlocks {
+		body.AppendBlock(sb.Block)
+		if i < len(sortableBlocks)-1 {
+			body.AppendNewline()
+		}
+	}
+
+	outputBytes := hclwrite.Format(writeFile.Bytes())
+	outputBytes = append(bytes.TrimSpace(outputBytes), '\n')
 
 	switch {
 	case outputPath != "":
-		err := os.WriteFile(outputPath, []byte(output), 0o644)
+		err := os.WriteFile(outputPath, outputBytes, 0o644)
 		if err != nil {
 			return fmt.Errorf("error writing output to file '%s': %w", outputPath, err)
 		}
 	case dry:
-		fmt.Println(output)
+		fmt.Print(string(outputBytes))
 	default:
-		err := os.WriteFile(path, []byte(output), 0o644)
+		err := os.WriteFile(path, outputBytes, 0o644)
 		if err != nil {
 			return fmt.Errorf("error writing output to file '%s': %w", path, err)
 		}
@@ -96,7 +136,6 @@ func (i *Ingestor) Parse(path string, outputPath string, dry bool) error {
 	return nil
 }
 
-// validateFilePath returns an error if the given path is empty, does not exist, or is a directory.
 func ValidateFilePath(path string) error {
 	if path == "" {
 		return errors.New("file path is required")
