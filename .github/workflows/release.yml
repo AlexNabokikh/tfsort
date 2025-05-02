@@ -12,13 +12,13 @@ jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - run: git fetch --force --tags
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v5
         with:
-          go-version: ">=1.20.1"
+          go-version: stable
           cache: true
       - name: Install mono
         run: sudo apt-get update && sudo apt-get install -y mono-devel
@@ -29,7 +29,7 @@ jobs:
           echo '#!/bin/bash' >> /usr/local/bin/choco
           echo 'mono /opt/chocolatey/choco.exe $@' >> /usr/local/bin/choco
           chmod +x /usr/local/bin/choco
-      - uses: goreleaser/goreleaser-action@v4
+      - uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: latest
