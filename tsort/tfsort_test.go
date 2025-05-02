@@ -127,15 +127,14 @@ func TestParse(t *testing.T) {
 		}
 
 		err := ingestor.Parse(unreadableInputFile, outputFile, false)
-		if err == nil {
-			os.Chmod(unreadableInputFile, 0600)
+		switch {
+		case err == nil:
 			t.Errorf("Expected error when reading input file with permissions 0000 but got nil")
-		} else if !strings.Contains(err.Error(), "error reading file") {
-			os.Chmod(unreadableInputFile, 0600)
+		case !strings.Contains(err.Error(), "error reading file"):
 			t.Errorf("Expected 'error reading file' error, but got: %v", err)
-		} else {
-			os.Chmod(unreadableInputFile, 0600)
+		default:
 		}
+		os.Chmod(unreadableInputFile, 0600)
 	})
 
 	t.Run("Invalid HCL Syntax", func(t *testing.T) {
