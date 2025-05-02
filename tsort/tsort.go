@@ -58,6 +58,7 @@ func (i *Ingestor) Parse(path string, outputPath string, dry bool) error {
 		} else if errors.Is(err, os.ErrNotExist) {
 			return err
 		}
+
 		fmt.Fprintf(os.Stderr, "Warning: %v\n", err)
 	}
 
@@ -103,6 +104,7 @@ func (i *Ingestor) Parse(path string, outputPath string, dry bool) error {
 
 	for i, block := range otherTokens {
 		body.AppendBlock(block)
+
 		if i < len(otherTokens)-1 || len(sortableBlocks) > 0 {
 			body.AppendNewline()
 		}
@@ -110,6 +112,7 @@ func (i *Ingestor) Parse(path string, outputPath string, dry bool) error {
 
 	for i, sb := range sortableBlocks {
 		body.AppendBlock(sb.Block)
+
 		if i < len(sortableBlocks)-1 {
 			body.AppendNewline()
 		}
@@ -120,14 +123,14 @@ func (i *Ingestor) Parse(path string, outputPath string, dry bool) error {
 
 	switch {
 	case outputPath != "":
-		err := os.WriteFile(outputPath, outputBytes, 0o644)
+		err = os.WriteFile(outputPath, outputBytes, 0600)
 		if err != nil {
 			return fmt.Errorf("error writing output to file '%s': %w", outputPath, err)
 		}
 	case dry:
 		fmt.Print(string(outputBytes))
 	default:
-		err := os.WriteFile(path, outputBytes, 0o644)
+		err = os.WriteFile(path, outputBytes, 0600)
 		if err != nil {
 			return fmt.Errorf("error writing output to file '%s': %w", path, err)
 		}

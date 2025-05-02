@@ -20,17 +20,19 @@ const (
 
 func setupTestDir(t *testing.T) {
 	t.Helper()
+
 	if _, err := os.Stat(testDataBaseDir); os.IsNotExist(err) {
 		err = os.Mkdir(testDataBaseDir, 0755)
 		if err != nil {
 			t.Fatalf("Failed to create testdata directory: %v", err)
 		}
 	}
+
 	for _, fname := range []string{validFilePath, validTofuPath, expectedTfPath, expectedTofuPath} {
 		info, err := os.Stat(fname)
 		if os.IsNotExist(err) || (err == nil && info.Size() == 0) {
 			content := []byte(`variable "placeholder" {}`)
-			if err := os.WriteFile(fname, content, 0644); err != nil {
+			if err = os.WriteFile(fname, content, 0600); err != nil {
 				t.Fatalf("Failed to create placeholder test file %s: %v", fname, err)
 			}
 		} else if err != nil {
@@ -41,14 +43,16 @@ func setupTestDir(t *testing.T) {
 
 func cleanupTestFiles(t *testing.T, files ...string) {
 	t.Helper()
+
 	for _, file := range files {
-		os.Chmod(file, 0644)
+		os.Chmod(file, 0600)
 		os.Remove(file)
 	}
 }
 
 func TestCanIngest(t *testing.T) {
 	setupTestDir(t)
+
 	ingestor := tsort.NewIngestor()
 
 	invalidExtFile := filepath.Join(testDataBaseDir, "invalid_file.txt")
@@ -76,9 +80,10 @@ func TestCanIngest(t *testing.T) {
 	})
 
 	t.Run("Invalid File Type", func(t *testing.T) {
-		if err := os.WriteFile(invalidExtFile, []byte("data"), 0644); err != nil {
+		if err := os.WriteFile(invalidExtFile, []byte("data"), 0600); err != nil {
 			t.Fatalf("Failed to create invalid extension file: %v", err)
 		}
+
 		if err := ingestor.CanIngest(invalidExtFile); err == nil {
 			t.Error("Expected error for invalid file type (.txt) but got nil")
 		} else if !strings.Contains(err.Error(), "not a supported") {
@@ -87,8 +92,10 @@ func TestCanIngest(t *testing.T) {
 	})
 }
 
+//gocyclo:ignore
 func TestParse(t *testing.T) {
 	setupTestDir(t)
+
 	ingestor := tsort.NewIngestor()
 	invalidHclFile := filepath.Join(testDataBaseDir, "invalid_syntax.tf")
 	unwritableOutputFile := filepath.Join(testDataBaseDir, "unwritable_output.tf")
@@ -106,11 +113,13 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("Input file read error", func(t *testing.T) {
-		if err := os.WriteFile(unreadableInputFile, []byte(`variable "a" {}`), 0644); err != nil {
+		if err := os.WriteFile(unreadableInputFile, []byte(`variable "a" {}`), 0600); err != nil {
 			t.Fatalf("Failed to create file for read error test: %v", err)
 		}
+
 		if err := os.Chmod(unreadableInputFile, 0000); err != nil {
 			t.Logf("Warning: Could not set input file permissions to 0000: %v", err)
+
 			_, readErr := os.ReadFile(unreadableInputFile)
 			if readErr == nil {
 				t.Skipf("Skipping read error test: unable to make file %s unreadable by owner", unreadableInputFile)
@@ -119,19 +128,19 @@ func TestParse(t *testing.T) {
 
 		err := ingestor.Parse(unreadableInputFile, outputFile, false)
 		if err == nil {
-			os.Chmod(unreadableInputFile, 0644)
+			os.Chmod(unreadableInputFile, 0600)
 			t.Errorf("Expected error when reading input file with permissions 0000 but got nil")
 		} else if !strings.Contains(err.Error(), "error reading file") {
-			os.Chmod(unreadableInputFile, 0644)
+			os.Chmod(unreadableInputFile, 0600)
 			t.Errorf("Expected 'error reading file' error, but got: %v", err)
 		} else {
-			os.Chmod(unreadableInputFile, 0644)
+			os.Chmod(unreadableInputFile, 0600)
 		}
 	})
 
 	t.Run("Invalid HCL Syntax", func(t *testing.T) {
 		invalidContent := []byte(`variable "a" { type = string`)
-		if err := os.WriteFile(invalidHclFile, invalidContent, 0644); err != nil {
+		if err := os.WriteFile(invalidHclFile, invalidContent, 0600); err != nil {
 			t.Fatalf("Failed to create invalid HCL file: %v", err)
 		}
 
@@ -158,13 +167,18 @@ func TestParse(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read output file %s: %v", outputFile, err)
 		}
+
 		expectedFileBytes, err := os.ReadFile(expectedTfPath)
 		if err != nil {
 			t.Fatalf("Failed to read expected file %s: %v", expectedTfPath, err)
 		}
 
 		if string(outFileBytes) != string(expectedFileBytes) {
-			t.Errorf("Output file content mismatch.\nExpected:\n%s\nGot:\n%s", string(expectedFileBytes), string(outFileBytes))
+			t.Errorf(
+				"Output file content mismatch.\nExpected:\n%s\nGot:\n%s",
+				string(expectedFileBytes),
+				string(outFileBytes),
+			)
 		}
 	})
 
@@ -183,13 +197,18 @@ func TestParse(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read output file %s: %v", outputFile, err)
 		}
+
 		expectedFileBytes, err := os.ReadFile(expectedTofuPath)
 		if err != nil {
 			t.Fatalf("Failed to read expected file %s: %v", expectedTofuPath, err)
 		}
 
 		if string(outFileBytes) != string(expectedFileBytes) {
-			t.Errorf("Output file content mismatch for .tofu.\nExpected:\n%s\nGot:\n%s", string(expectedFileBytes), string(outFileBytes))
+			t.Errorf(
+				"Output file content mismatch for .tofu.\nExpected:\n%s\nGot:\n%s",
+				string(expectedFileBytes),
+				string(outFileBytes),
+			)
 		}
 	})
 
@@ -207,16 +226,19 @@ func TestParse(t *testing.T) {
 
 	t.Run("Overwrite input file", func(t *testing.T) {
 		tempInputFile := filepath.Join(testDataBaseDir, "temp_overwrite.tf")
+
 		validContent, err := os.ReadFile(validFilePath)
 		if err != nil {
 			t.Fatalf("Failed to read valid file for copy: %v", err)
 		}
-		if err := os.WriteFile(tempInputFile, validContent, 0644); err != nil {
+
+		if err = os.WriteFile(tempInputFile, validContent, 0600); err != nil {
 			t.Fatalf("Failed to create temp input file: %v", err)
 		}
+
 		defer cleanupTestFiles(t, tempInputFile)
 
-		if err := ingestor.Parse(tempInputFile, "", false); err != nil {
+		if err = ingestor.Parse(tempInputFile, "", false); err != nil {
 			t.Fatalf("Parse failed unexpectedly during overwrite: %v", err)
 		}
 
@@ -224,20 +246,26 @@ func TestParse(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read modified input file %s: %v", tempInputFile, err)
 		}
+
 		expectedBytes, err := os.ReadFile(expectedTfPath)
 		if err != nil {
 			t.Fatalf("Failed to read expected file %s: %v", expectedTfPath, err)
 		}
 
 		if string(modifiedBytes) != string(expectedBytes) {
-			t.Errorf("Overwritten input file content mismatch.\nExpected:\n%s\nGot:\n%s", string(expectedBytes), string(modifiedBytes))
+			t.Errorf(
+				"Overwritten input file content mismatch.\nExpected:\n%s\nGot:\n%s",
+				string(expectedBytes),
+				string(modifiedBytes),
+			)
 		}
 	})
 
 	t.Run("Error writing to output file (permissions)", func(t *testing.T) {
 		if f, err := os.Create(unwritableOutputFile); err == nil {
 			f.Close()
-			if err := os.Chmod(unwritableOutputFile, 0444); err != nil {
+
+			if err = os.Chmod(unwritableOutputFile, 0444); err != nil {
 				t.Logf("Warning: Could not set output file to read-only, test might not be effective: %v", err)
 			}
 		} else {
@@ -245,22 +273,22 @@ func TestParse(t *testing.T) {
 		}
 
 		err := ingestor.Parse(validFilePath, unwritableOutputFile, false)
-		if err == nil {
-			cleanupTestFiles(t, unwritableOutputFile)
+		switch {
+		case err == nil:
 			t.Error("Expected error when writing to read-only output file but got nil")
-		} else if !strings.Contains(err.Error(), "error writing output") {
-			cleanupTestFiles(t, unwritableOutputFile)
+		case !strings.Contains(err.Error(), "error writing output"):
 			t.Errorf("Expected 'error writing output' error, but got: %v", err)
-		} else {
-			cleanupTestFiles(t, unwritableOutputFile)
+		default:
 		}
+		cleanupTestFiles(t, unwritableOutputFile)
 	})
 }
 
 func TestValidateFilePath(t *testing.T) {
 	setupTestDir(t)
+
 	if _, err := os.Stat(validFilePath); os.IsNotExist(err) {
-		os.WriteFile(validFilePath, []byte(`variable "a" {}`), 0644)
+		os.WriteFile(validFilePath, []byte(`variable "a" {}`), 0600)
 	}
 
 	t.Run("File path is empty", func(t *testing.T) {
