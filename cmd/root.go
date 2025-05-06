@@ -3,7 +3,7 @@ package cmd
 import (
 	"log"
 
-	"github.com/AlexNabokikh/tfsort/tsort"
+	"github.com/AlexNabokikh/tfsort/internal/hclsort"
 	"github.com/spf13/cobra"
 )
 
@@ -28,11 +28,11 @@ func Execute() {
 				return cmd.Usage()
 			}
 
-			if err := tsort.ValidateFilePath(filePath); err != nil {
+			if err := hclsort.ValidateFilePath(filePath); err != nil {
 				return err
 			}
 
-			i := tsort.NewIngestor()
+			i := hclsort.NewIngestor()
 
 			return i.Parse(filePath, outputPath, dryRun)
 		},

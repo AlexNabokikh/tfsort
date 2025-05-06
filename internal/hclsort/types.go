@@ -1,4 +1,4 @@
-package tsort
+package hclsort
 
 import "github.com/hashicorp/hcl/v2/hclwrite"
 
