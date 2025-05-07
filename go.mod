@@ -3,7 +3,7 @@ module github.com/AlexNabokikh/tfsort
 go 1.24
 
 require (
-	github.com/hashicorp/hcl/v2 v2.20.1
+	github.com/hashicorp/hcl/v2 v2.23.0
 	github.com/spf13/cobra v1.8.1
 )
 
