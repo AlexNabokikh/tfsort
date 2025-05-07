@@ -16,6 +16,7 @@ variable "additional_userdata" {
 }
 
 variable "aws-profile" {
+  # inside block comment
   description = "The aws profile name, used when creating the kubeconfig file."
 }
 
@@ -53,6 +54,7 @@ variable "kubernetes_pipeline_roles" {
   default = []
 }
 
+# comment for kubernetes_pipeline_users valiable
 variable "kubernetes_pipeline_users" {
   description = "IAM users for pipelines required access to EKS."
   type = list(object({
