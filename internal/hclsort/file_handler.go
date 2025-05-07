@@ -57,16 +57,17 @@ func ReadFileBytes(path string) ([]byte, error) {
 
 // WriteSortedContent handles writing the outputBytes to the specified destination.
 func WriteSortedContent(
-	originalPath string,
+	originalPathOrMarker string,
 	outputPath string,
 	dryRun bool,
 	outputBytes []byte,
+	isInputFromStdin bool,
 ) error {
 	finalBytes := append(bytes.TrimSpace(outputBytes), '\n')
 
 	switch {
 	case outputPath != "":
-		err := os.WriteFile(outputPath, finalBytes, 0600)
+		err := os.WriteFile(outputPath, finalBytes, 0644)
 		if err != nil {
 			return fmt.Errorf(
 				"error writing output to file '%s': %w",
@@ -76,12 +77,17 @@ func WriteSortedContent(
 		}
 	case dryRun:
 		fmt.Print(string(finalBytes))
+	case isInputFromStdin:
+		_, err := fmt.Print(string(finalBytes))
+		if err != nil {
+			return fmt.Errorf("error writing to stdout: %w", err)
+		}
 	default:
-		err := os.WriteFile(originalPath, finalBytes, 0600)
+		err := os.WriteFile(originalPathOrMarker, finalBytes, 0644)
 		if err != nil {
 			return fmt.Errorf(
 				"error writing output to file '%s': %w",
-				originalPath,
+				originalPathOrMarker,
 				err,
 			)
 		}

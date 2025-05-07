@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/AlexNabokikh/tfsort/internal/hclsort"
 	"github.com/spf13/cobra"
@@ -10,31 +12,42 @@ import (
 // Execute is the entry point for the CLI.
 func Execute() {
 	var (
-		filePath   string
 		outputPath string
 		dryRun     bool
 	)
 
 	rootCmd := &cobra.Command{
-		Use:   "tfsort [file]",
-		Short: "A utility to sort Terraform variables and outputs",
+		Use:   "tfsort [file|-]",
+		Short: "A utility to sort Terraform variables and outputs. If no file is specified or '-' is used as the filename, input is read from stdin.",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) > 0 {
-				filePath = args[0]
+			if len(args) == 0 {
+				stat, err := os.Stdin.Stat()
+				if err != nil {
+					return fmt.Errorf("failed to stat stdin: %w", err)
+				}
+				if (stat.Mode() & os.ModeCharDevice) != 0 {
+					return cmd.Usage()
+				}
+				ingestor := hclsort.NewIngestor()
+				return ingestor.Parse(hclsort.StdInPathIdentifier, outputPath, dryRun, true)
 			}
 
-			if filePath == "" {
-				return cmd.Usage()
+			var isStdin bool
+			currentInputPath := args[0]
+
+			if currentInputPath == "-" {
+				isStdin = true
+				currentInputPath = hclsort.StdInPathIdentifier
+			} else {
+				isStdin = false
+				if err := hclsort.ValidateFilePath(currentInputPath); err != nil {
+					return err
+				}
 			}
 
-			if err := hclsort.ValidateFilePath(filePath); err != nil {
-				return err
-			}
-
-			i := hclsort.NewIngestor()
-
-			return i.Parse(filePath, outputPath, dryRun)
+			ingestor := hclsort.NewIngestor()
+			return ingestor.Parse(currentInputPath, outputPath, dryRun, isStdin)
 		},
 	}
 

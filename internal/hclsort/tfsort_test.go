@@ -1,6 +1,7 @@
 package hclsort_test
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,43 +21,72 @@ const (
 
 func setupTestDir(t *testing.T) {
 	t.Helper()
-
 	if _, err := os.Stat(testDataBaseDir); os.IsNotExist(err) {
 		err = os.Mkdir(testDataBaseDir, 0755)
 		if err != nil {
 			t.Fatalf("Failed to create testdata directory: %v", err)
 		}
 	}
-
-	for _, fname := range []string{
-		validFilePath,
-		validTofuPath,
-		expectedTfPath,
-		expectedTofuPath,
-	} {
-		info, err := os.Stat(fname)
-		if os.IsNotExist(err) || (err == nil && info.Size() == 0) {
-			content := []byte(`variable "placeholder" {}`)
-			if err = os.WriteFile(fname, content, 0600); err != nil {
-				t.Fatalf(
-					"Failed to create placeholder test file %s: %v",
-					fname,
-					err,
-				)
-			}
-		} else if err != nil {
-			t.Fatalf("Failed to stat test file %s: %v", fname, err)
-		}
-	}
 }
 
 func cleanupTestFiles(t *testing.T, files ...string) {
 	t.Helper()
-
 	for _, file := range files {
-		os.Chmod(file, 0600)
-		os.Remove(file)
+		_ = os.Chmod(file, 0600)
+		_ = os.Remove(file)
 	}
+}
+
+func mockStdin(t *testing.T, content string) func() {
+	t.Helper()
+	originalStdin := os.Stdin
+	r, w, errPipe := os.Pipe()
+	if errPipe != nil {
+		t.Fatalf("Failed to create pipe for stdin mock: %v", errPipe)
+	}
+
+	go func() {
+		defer w.Close()
+		_, errWrite := w.WriteString(content)
+		if errWrite != nil {
+			t.Logf("Error writing to stdin mock: %v", errWrite)
+		}
+	}()
+
+	os.Stdin = r //nolint:reassign //common pattern for mocking standard I/O in tests
+
+	return func() {
+		os.Stdin = originalStdin //nolint:reassign //common pattern for mocking standard I/O in tests
+		if errClose := r.Close(); errClose != nil {
+			t.Logf("Error closing mocked stdin reader: %v", errClose)
+		}
+	}
+}
+
+func captureOutput(t *testing.T, action func()) string {
+	t.Helper()
+	oldStdout := os.Stdout
+	r, w, errPipe := os.Pipe()
+	if errPipe != nil {
+		t.Fatalf("Failed to create pipe for stdout capture: %v", errPipe)
+	}
+	os.Stdout = w //nolint:reassign //common pattern for mocking standard I/O in tests
+
+	action()
+
+	if errClose := w.Close(); errClose != nil {
+		t.Logf("Warning: failed to close writer for stdout capture: %v", errClose)
+	}
+	os.Stdout = oldStdout //nolint:reassign //common pattern for mocking standard I/O in tests
+
+	outBytes, errRead := io.ReadAll(r)
+	if errRead != nil {
+		t.Fatalf("Failed to read from stdout capture pipe: %v", errRead)
+	}
+	if errClose := r.Close(); errClose != nil {
+		t.Logf("Warning: failed to close reader for stdout capture: %v", errClose)
+	}
+	return string(outBytes)
 }
 
 func TestCheckFileExtension(t *testing.T) {
@@ -111,8 +141,7 @@ func TestCheckFileExtension(t *testing.T) {
 	})
 
 	t.Run("Path with empty extension", func(t *testing.T) {
-		err := hclsort.CheckFileExtension("fileWithNoExtension", allowedTypes)
-		if err != nil {
+		if err := hclsort.CheckFileExtension("fileWithNoExtension", allowedTypes); err != nil {
 			t.Errorf(
 				"Expected no error for a path with no extension, but got: %v",
 				err,
@@ -121,8 +150,7 @@ func TestCheckFileExtension(t *testing.T) {
 	})
 
 	t.Run("Path with only a dot (treated as no extension)", func(t *testing.T) {
-		err := hclsort.CheckFileExtension(".", allowedTypes)
-		if err != nil {
+		if err := hclsort.CheckFileExtension(".", allowedTypes); err != nil {
 			t.Errorf(
 				"Expected no error for a path that is just a dot ('.'), but got: %v",
 				err,
@@ -135,16 +163,29 @@ func TestCheckFileExtension(t *testing.T) {
 func TestParse(t *testing.T) {
 	setupTestDir(t)
 
+	validTestContentBytes, errReadFile := os.ReadFile(validFilePath)
+	if errReadFile != nil {
+		t.Fatalf("Failed to read %s: %v. Ensure it exists and contains unsorted HCL.", validFilePath, errReadFile)
+	}
+	validTestContentForStdin := string(validTestContentBytes)
+
+	expectedSortedTestContentBytes, errReadFile := os.ReadFile(expectedTfPath)
+	if errReadFile != nil {
+		t.Fatalf("Failed to read %s: %v. Ensure it exists and contains sorted HCL.", expectedTfPath, errReadFile)
+	}
+	expectedSortedTestContent := string(expectedSortedTestContentBytes)
+	normalizedExpectedSortedContent := strings.TrimSpace(expectedSortedTestContent) + "\n"
+
+	expectedSortedTofuContentBytes, errReadFile := os.ReadFile(expectedTofuPath)
+	if errReadFile != nil {
+		t.Fatalf("Failed to read %s: %v. Ensure it exists and contains sorted HCL.", expectedTofuPath, errReadFile)
+	}
+	normalizedExpectedSortedTofuContent := strings.TrimSpace(string(expectedSortedTofuContentBytes)) + "\n"
+
 	ingestor := hclsort.NewIngestor()
 	invalidHclFile := filepath.Join(testDataBaseDir, "invalid_syntax.tf")
-	unwritableOutputFile := filepath.Join(
-		testDataBaseDir,
-		"unwritable_output.tf",
-	)
-	unreadableInputFile := filepath.Join(
-		testDataBaseDir,
-		"unreadable_input.tf",
-	)
+	unwritableOutputFile := filepath.Join(testDataBaseDir, "unwritable_output.tf")
+	unreadableInputFile := filepath.Join(testDataBaseDir, "unreadable_input.tf")
 
 	defer cleanupTestFiles(
 		t,
@@ -155,7 +196,7 @@ func TestParse(t *testing.T) {
 	)
 
 	t.Run("File does not exist", func(t *testing.T) {
-		err := ingestor.Parse("nonExistentFile.tf", outputFile, false)
+		err := ingestor.Parse("nonExistentFile.tf", outputFile, false, false)
 		if err == nil {
 			t.Error("Expected error for non-existent file but got nil")
 		} else if !strings.Contains(err.Error(), "no such file or directory") &&
@@ -168,214 +209,252 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("Input file read error", func(t *testing.T) {
-		if err := os.WriteFile(
-			unreadableInputFile,
-			[]byte(`variable "a" {}`),
-			0600,
-		); err != nil {
+		if err := os.WriteFile(unreadableInputFile, []byte(`variable "a" {}`), 0600); err != nil {
 			t.Fatalf("Failed to create file for read error test: %v", err)
 		}
 
-		if err := os.Chmod(unreadableInputFile, 0000); err != nil {
-			t.Logf(
-				"Warning: Could not set input file permissions to 0000: %v",
-				err,
-			)
-			_, readErr := os.ReadFile(unreadableInputFile)
-			if readErr == nil {
-				os.Chmod(unreadableInputFile, 0600)
-				t.Skipf(
-					"Skipping read error test: unable to make file %s unreadable by owner",
-					unreadableInputFile,
-				)
+		errChmod := os.Chmod(unreadableInputFile, 0000)
+		if errChmod != nil {
+			t.Logf("Warning: Could not set input file permissions to 0000: %v", errChmod)
+			_, readErrAttempt := os.ReadFile(unreadableInputFile)
+			if readErrAttempt == nil {
+				_ = os.Chmod(unreadableInputFile, 0600)
+				t.Skipf("Skipping read error test: unable to make file %s unreadable by owner", unreadableInputFile)
 			}
 		}
+		defer func() { _ = os.Chmod(unreadableInputFile, 0600) }()
 
-		err := ingestor.Parse(unreadableInputFile, outputFile, false)
+		errParse := ingestor.Parse(unreadableInputFile, outputFile, false, false)
 		switch {
-		case err == nil:
-			t.Errorf(
-				"Expected error when reading input file with permissions 0000 but got nil",
-			)
-		case !strings.Contains(err.Error(), "error reading file"):
-			t.Errorf("Expected 'error reading file' error, but got: %v", err)
-		default:
+		case errParse == nil:
+			t.Errorf("Expected error when reading input file with permissions 0000 but got nil")
+		case !strings.Contains(errParse.Error(), "error reading file"):
+			t.Errorf("Expected 'error reading file' error, but got: %v", errParse)
 		}
-		os.Chmod(unreadableInputFile, 0600)
 	})
 
-	t.Run("Invalid HCL Syntax", func(t *testing.T) {
+	t.Run("Invalid HCL Syntax from file", func(t *testing.T) {
 		invalidContent := []byte(`variable "a" { type = string`)
 		if err := os.WriteFile(invalidHclFile, invalidContent, 0600); err != nil {
 			t.Fatalf("Failed to create invalid HCL file: %v", err)
 		}
 
-		err := ingestor.Parse(invalidHclFile, outputFile, false)
-		if err == nil {
+		errParse := ingestor.Parse(invalidHclFile, outputFile, false, false)
+		if errParse == nil {
 			t.Error("Expected error for invalid HCL syntax but got nil")
-		} else if !strings.Contains(err.Error(), "error parsing HCL content") {
-			t.Errorf("Expected HCL parsing error, but got: %v", err)
+		} else if !strings.Contains(errParse.Error(), "error parsing HCL content") {
+			t.Errorf("Expected HCL parsing error, but got: %v", errParse)
 		}
 	})
 
 	t.Run("Write to output file (.tf)", func(t *testing.T) {
 		cleanupTestFiles(t, outputFile)
 
-		if err := ingestor.Parse(validFilePath, outputFile, false); err != nil {
+		if err := ingestor.Parse(validFilePath, outputFile, false, false); err != nil {
 			t.Fatalf("Parse failed unexpectedly: %v", err)
 		}
 
-		if _, err := os.Stat(outputFile); os.IsNotExist(err) {
+		if _, errStat := os.Stat(outputFile); os.IsNotExist(errStat) {
 			t.Fatal("Output file was not created")
 		}
 
-		outFileBytes, err := os.ReadFile(outputFile)
-		if err != nil {
-			t.Fatalf("Failed to read output file %s: %v", outputFile, err)
+		outFileBytes, errRead := os.ReadFile(outputFile)
+		if errRead != nil {
+			t.Fatalf("Failed to read output file %s: %v", outputFile, errRead)
 		}
 
-		expectedFileBytes, err := os.ReadFile(expectedTfPath)
-		if err != nil {
-			t.Fatalf("Failed to read expected file %s: %v", expectedTfPath, err)
-		}
-
-		if string(outFileBytes) != string(expectedFileBytes) {
-			t.Errorf(
-				"Output file content mismatch.\nExpected:\n%s\nGot:\n%s",
-				string(expectedFileBytes),
-				string(outFileBytes),
-			)
+		if string(outFileBytes) != normalizedExpectedSortedContent {
+			t.Errorf("Output file content mismatch.\nExpected:\n%s\nGot:\n%s",
+				normalizedExpectedSortedContent, string(outFileBytes))
 		}
 	})
 
 	t.Run("Write to output file (.tofu)", func(t *testing.T) {
 		cleanupTestFiles(t, outputFile)
 
-		if err := ingestor.Parse(validTofuPath, outputFile, false); err != nil {
+		if err := ingestor.Parse(validTofuPath, outputFile, false, false); err != nil {
 			t.Fatalf("Parse failed unexpectedly for .tofu file: %v", err)
 		}
 
-		if _, err := os.Stat(outputFile); os.IsNotExist(err) {
+		if _, errStat := os.Stat(outputFile); os.IsNotExist(errStat) {
 			t.Fatal("Output file was not created for .tofu input")
 		}
 
-		outFileBytes, err := os.ReadFile(outputFile)
-		if err != nil {
-			t.Fatalf("Failed to read output file %s: %v", outputFile, err)
+		outFileBytes, errRead := os.ReadFile(outputFile)
+		if errRead != nil {
+			t.Fatalf("Failed to read output file %s: %v", outputFile, errRead)
 		}
 
-		expectedFileBytes, err := os.ReadFile(expectedTofuPath)
-		if err != nil {
-			t.Fatalf(
-				"Failed to read expected file %s: %v",
-				expectedTofuPath,
-				err,
-			)
-		}
-
-		if string(outFileBytes) != string(expectedFileBytes) {
-			t.Errorf(
-				"Output file content mismatch for .tofu.\nExpected:\n%s\nGot:\n%s",
-				string(expectedFileBytes),
-				string(outFileBytes),
-			)
+		if string(outFileBytes) != normalizedExpectedSortedTofuContent {
+			t.Errorf("Output file content mismatch for .tofu.\nExpected:\n%s\nGot:\n%s",
+				normalizedExpectedSortedTofuContent, string(outFileBytes))
 		}
 	})
 
-	t.Run("Write to stdout (dry run)", func(t *testing.T) {
+	t.Run("Write to stdout (dry run from file)", func(t *testing.T) {
 		cleanupTestFiles(t, outputFile)
 
-		if err := ingestor.Parse(validFilePath, "", true); err != nil {
-			t.Fatalf("Parse failed unexpectedly during dry run: %v", err)
+		var parseErr error
+		capturedStdout := captureOutput(t, func() {
+			parseErr = ingestor.Parse(validFilePath, "", true, false)
+		})
+
+		if parseErr != nil {
+			t.Fatalf("Parse failed unexpectedly during dry run from file: %v", parseErr)
 		}
 
-		if _, err := os.Stat(outputFile); !os.IsNotExist(err) {
-			t.Error(
-				"Output file was created during dry run, but should not have been",
-			)
+		if capturedStdout != normalizedExpectedSortedContent {
+			t.Errorf("Dry run output mismatch for file input.\nExpected:\n%s\nGot:\n%s",
+				normalizedExpectedSortedContent, capturedStdout)
+		}
+
+		if _, errStat := os.Stat(outputFile); !os.IsNotExist(errStat) {
+			t.Error("Output file was created during dry run from file, but should not have been")
 		}
 	})
 
 	t.Run("Overwrite input file", func(t *testing.T) {
 		tempInputFile := filepath.Join(testDataBaseDir, "temp_overwrite.tf")
-
-		validContent, err := os.ReadFile(validFilePath)
-		if err != nil {
-			t.Fatalf("Failed to read valid file for copy: %v", err)
-		}
-
-		if err = os.WriteFile(tempInputFile, validContent, 0600); err != nil {
+		if err := os.WriteFile(tempInputFile, validTestContentBytes, 0600); err != nil {
 			t.Fatalf("Failed to create temp input file: %v", err)
 		}
 		defer cleanupTestFiles(t, tempInputFile)
 
-		if err = ingestor.Parse(tempInputFile, "", false); err != nil {
+		if err := ingestor.Parse(tempInputFile, "", false, false); err != nil {
 			t.Fatalf("Parse failed unexpectedly during overwrite: %v", err)
 		}
 
-		modifiedBytes, err := os.ReadFile(tempInputFile)
-		if err != nil {
-			t.Fatalf(
-				"Failed to read modified input file %s: %v",
-				tempInputFile,
-				err,
-			)
+		modifiedBytes, errRead := os.ReadFile(tempInputFile)
+		if errRead != nil {
+			t.Fatalf("Failed to read modified input file %s: %v", tempInputFile, errRead)
 		}
 
-		expectedBytes, err := os.ReadFile(expectedTfPath)
-		if err != nil {
-			t.Fatalf("Failed to read expected file %s: %v", expectedTfPath, err)
-		}
-
-		if string(modifiedBytes) != string(expectedBytes) {
-			t.Errorf(
-				"Overwritten input file content mismatch.\nExpected:\n%s\nGot:\n%s",
-				string(expectedBytes),
-				string(modifiedBytes),
-			)
+		if string(modifiedBytes) != normalizedExpectedSortedContent {
+			t.Errorf("Overwritten input file content mismatch.\nExpected:\n%s\nGot:\n%s",
+				normalizedExpectedSortedContent, string(modifiedBytes))
 		}
 	})
 
 	t.Run("Error writing to output file (permissions)", func(t *testing.T) {
-		if f, err := os.Create(unwritableOutputFile); err == nil {
-			f.Close()
-			if err = os.Chmod(unwritableOutputFile, 0444); err != nil {
-				t.Logf(
-					"Warning: Could not set output file to read-only, test might not be effective: %v",
-					err,
-				)
+		if f, errCreate := os.Create(unwritableOutputFile); errCreate == nil {
+			_ = f.Close()
+			if errChmod := os.Chmod(unwritableOutputFile, 0444); errChmod != nil {
+				t.Logf("Warning: Could not set output file to read-only, test might not be effective: %v", errChmod)
 			}
 		} else {
-			t.Fatalf(
-				"Failed to create dummy output file for permissions test: %v",
-				err,
-			)
+			t.Fatalf("Failed to create dummy output file for permissions test: %v", errCreate)
+		}
+		defer func() { _ = os.Chmod(unwritableOutputFile, 0600) }()
+
+		errParse := ingestor.Parse(validFilePath, unwritableOutputFile, false, false)
+		switch {
+		case errParse == nil:
+			t.Error("Expected error when writing to read-only output file but got nil")
+		case !strings.Contains(errParse.Error(), "error writing output"):
+			t.Errorf("Expected 'error writing output' error, but got: %v", errParse)
+		}
+	})
+
+	t.Run("Read from stdin, write to stdout", func(t *testing.T) {
+		cleanupTestFiles(t, outputFile)
+
+		restoreStdin := mockStdin(t, validTestContentForStdin)
+		defer restoreStdin()
+
+		var parseErr error
+		capturedStdout := captureOutput(t, func() {
+			parseErr = ingestor.Parse(hclsort.StdInPathIdentifier, "", false, true)
+		})
+
+		if parseErr != nil {
+			t.Fatalf("Parse from stdin to stdout failed unexpectedly: %v", parseErr)
 		}
 
-		err := ingestor.Parse(validFilePath, unwritableOutputFile, false)
-		switch {
-		case err == nil:
-			t.Error(
-				"Expected error when writing to read-only output file but got nil",
-			)
-		case !strings.Contains(err.Error(), "error writing output"):
-			t.Errorf("Expected 'error writing output' error, but got: %v", err)
-		default:
+		if capturedStdout != normalizedExpectedSortedContent {
+			t.Errorf("Output to stdout from stdin mismatch.\nExpected:\n%s\nGot:\n%s",
+				normalizedExpectedSortedContent, capturedStdout)
 		}
-		os.Chmod(unwritableOutputFile, 0600)
+
+		if _, errStat := os.Stat(outputFile); !os.IsNotExist(errStat) {
+			t.Error("Output file was created during stdin to stdout test, but should not have been")
+		}
+	})
+
+	t.Run("Read from stdin, write to output file", func(t *testing.T) {
+		cleanupTestFiles(t, outputFile)
+
+		restoreStdin := mockStdin(t, validTestContentForStdin)
+		defer restoreStdin()
+
+		err := ingestor.Parse(hclsort.StdInPathIdentifier, outputFile, false, true)
+		if err != nil {
+			t.Fatalf("Parse from stdin to output file failed unexpectedly: %v", err)
+		}
+
+		if _, errStat := os.Stat(outputFile); os.IsNotExist(errStat) {
+			t.Fatal("Output file was not created when parsing from stdin with -o")
+		}
+
+		outFileBytes, errRead := os.ReadFile(outputFile)
+		if errRead != nil {
+			t.Fatalf("Failed to read output file %s: %v", outputFile, errRead)
+		}
+
+		if string(outFileBytes) != normalizedExpectedSortedContent {
+			t.Errorf("Output file content mismatch from stdin.\nExpected:\n%s\nGot:\n%s",
+				normalizedExpectedSortedContent, string(outFileBytes))
+		}
+	})
+
+	t.Run("Read from stdin, dry run to stdout", func(t *testing.T) {
+		cleanupTestFiles(t, outputFile)
+
+		restoreStdin := mockStdin(t, validTestContentForStdin)
+		defer restoreStdin()
+
+		var parseErr error
+		capturedStdout := captureOutput(t, func() {
+			parseErr = ingestor.Parse(hclsort.StdInPathIdentifier, "", true, true)
+		})
+
+		if parseErr != nil {
+			t.Fatalf("Parse from stdin with dry-run failed unexpectedly: %v", parseErr)
+		}
+
+		if capturedStdout != normalizedExpectedSortedContent {
+			t.Errorf("Dry run output to stdout from stdin mismatch.\nExpected:\n%s\nGot:\n%s",
+				normalizedExpectedSortedContent, capturedStdout)
+		}
+		if _, errStat := os.Stat(outputFile); !os.IsNotExist(errStat) {
+			t.Error("Output file was created during stdin dry run, but should not have been")
+		}
+	})
+
+	t.Run("Invalid HCL from stdin", func(t *testing.T) {
+		invalidContent := `variable "a" { type = string`
+		restoreStdin := mockStdin(t, invalidContent)
+		defer restoreStdin()
+
+		err := ingestor.Parse(hclsort.StdInPathIdentifier, outputFile, false, true)
+		if err == nil {
+			t.Error("Expected error for invalid HCL from stdin but got nil")
+		} else {
+			if !strings.Contains(err.Error(), "error parsing HCL content") {
+				t.Errorf("Expected HCL parsing error from stdin, but got: %v", err)
+			}
+			if !strings.Contains(err.Error(), hclsort.StdInPathIdentifier) {
+				t.Errorf("Expected error message for stdin to contain '%s', but got: %v", hclsort.StdInPathIdentifier, err.Error())
+			}
+		}
 	})
 }
 
 func TestValidateFilePath(t *testing.T) {
 	setupTestDir(t)
 
-	if _, err := os.Stat(validFilePath); os.IsNotExist(err) {
-		if err = os.WriteFile(
-			validFilePath,
-			[]byte(`variable "a" {}`),
-			0600,
-		); err != nil {
-			t.Fatalf("Failed to create %s for TestValidateFilePath: %v", validFilePath, err)
+	if _, statErr := os.Stat(validFilePath); os.IsNotExist(statErr) {
+		if writeErr := os.WriteFile(validFilePath, []byte(`variable "a" {}`), 0600); writeErr != nil {
+			t.Fatalf("Failed to create %s for TestValidateFilePath: %v", validFilePath, writeErr)
 		}
 	}
 

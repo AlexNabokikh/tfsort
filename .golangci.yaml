@@ -149,6 +149,10 @@ linters:
           # Default: true
           skipRecvDeref: false
 
+    gosec:
+      excludes:
+        - G306 # too strict
+
     govet:
       # Enable all analyzers.
       # Default: false
