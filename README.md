@@ -8,94 +8,208 @@
 
 ![Logo](files/logo.png)
 
-`tfsort` is a command-line utility designed for meticulous engineers who prefer to keep their Terraform variables and outputs sorted in alphabetical order.
-
-`tfsort` also corrects any spacing issues between the blocks and removes any leading or trailing new lines in the file.
+`tfsort` is a command-line utility designed for meticulous engineers who prefer to keep their Terraform `variable` and `output` blocks sorted alphabetically. It also corrects spacing issues between these blocks and removes leading or trailing newlines in the processed files. `tfsort` can read from files or stdin, write to files or stdout, and process directories recursively.
 
 ## Contents
 
-- [demo](#demo)
-- [installation](#installation)
-  - [homebrew](#homebrew)
-  - [chocolatey (windows)](#chocolatey-windows)
-  - [binary release](#binary-release)
-  - [from source](#from-source)
-- [usage](#usage)
-- [examples](#examples)
+- [Demo](#demo)
+- [Key Features](#key-features)
+- [Supported File Types](#supported-file-types)
+- [Installation](#installation)
+  - [Homebrew](#homebrew)
+  - [Chocolatey (Windows)](#chocolatey-windows)
+  - [Using `go install`](#using-go-install)
+  - [Binary Release](#binary-release)
+  - [From Source](#from-source)
+- [Usage](#usage)
+  - [Command Synopsis](#command-synopsis)
+  - [Arguments](#arguments)
+  - [Flags](#flags)
+- [Examples](#examples)
+- [Contributing](#contributing)
+- [Code of Conduct](#code-of-conduct)
+- [Author](#author)
+- [License](#license)
 
 ## Demo
 
 ![Demo](files/demo.gif)
 
+## Key Features
+
+- **Alphabetical Sorting**: Sorts `variable` and `output` blocks within your HCL files.
+- **Flexible Input/Output**:
+  - Read from a specific file or standard input (stdin).
+  - Overwrite the input file, write to a new file, or print to standard output (stdout).
+- **Recursive Processing**: Sort files in an entire directory and its subdirectories.
+  - Intelligently skips common version control (`.git`) and Terraform utility directories (`.terraform`, `.terragrunt-cache`).
+- **Dry Run Mode**: Preview changes without modifying any files.
+- **Code Formatting**:
+  - Corrects spacing between sorted blocks.
+  - Removes unnecessary leading or trailing newlines from the file.
+
+## Supported File Types
+
+`tfsort` processes files with the following extensions:
+
+- `.tf`
+- `.hcl`
+- `.tofu`
+
 ## Installation
 
 ### Homebrew
 
-To install `tfsort` using Homebrew, run the following command:
+To install `tfsort` using Homebrew:
 
-- Add the tap
+1. Add the tap:
 
-```bash
-brew tap alexnabokikh/tfsort
-```
+    ```bash
+    brew tap alexnabokikh/tfsort
+    ```
 
-- Install `tfsort`
+2. Install `tfsort`:
 
-```bash
-brew install tfsort
-```
+    ```bash
+    brew install tfsort
+    ```
 
 ### Chocolatey (Windows)
 
-To install `tfsort` using Chocolatey, run the following command:
+To install `tfsort` using Chocolatey:
 
 ```bash
 choco install tfsort
 ```
 
-### Binary release
+### Using `go install`
 
-To install `tfsort`, you can download the latest binary release from the [releases page](https://github.com/AlexNabokikh/tfsort/releases).
+If you have Go installed and configured, you can install `tfsort` directly using `go install`:
 
-### From source
+```bash
+go install github.com/AlexNabokikh/tfsort@latest
+```
 
-Alternatively, you can build `tfsort` from the source by cloning the repository and running `go build`.
+This command will download the source code, compile it, and install the `tfsort` binary into your `$GOPATH/bin` or `$GOBIN` directory (make sure this directory is in your system's `PATH`).
+
+### Binary Release
+
+Download the latest binary release for your operating system from the [Releases Page](https://github.com/AlexNabokikh/tfsort/releases).
+
+### From Source
+
+Alternatively, build `tfsort` from source:
+
+1. Clone the repository:
+
+    ```bash
+    git clone https://github.com/AlexNabokikh/tfsort.git
+    cd tfsort
+    ```
+
+2. Build the binary:
+
+    ```bash
+    go build .
+    ```
+
+    This will create a `tfsort` executable in the current directory.
 
 ## Usage
 
-The basic usage of `tfsort` is as follows:
+### Command Synopsis
 
 ```bash
-tfsort <path-to-tf-file> [--out <path-to-output-file>] [--dry-run]
+tfsort [file_or_directory|-] [flags]
 ```
 
-Available flags:
+### Arguments
 
-- `--out`: the path to the output file. If not provided, tfsort will overwrite the input file.
-- `--dry-run`: preview the changes without altering the original file.
+- `file_or_directory` (optional):
+  - Path to a single Terraform/HCL file (e.g., `variables.tf`).
+  - Path to a directory to process recursively (requires the `-r` flag).
+- `-` (optional):
+  - Instructs `tfsort` to read input from stdin.
+- If no file/directory argument is provided and stdin is detected as a pipe (e.g., `cat file.tf | tfsort`), `tfsort` will read from stdin.
+- If no arguments are provided and stdin is not a pipe, `tfsort` will show the help message.
+
+### Flags
+
+- `-o, --out <path>`:
+  - Specifies the path to the output file.
+  - If the input is a file and `-o` is not provided, the input file is overwritten.
+  - If the input is stdin and `-o` is not provided, the output is sent to stdout.
+  - This flag **cannot** be used with `-r, --recursive`.
+- `-d, --dry-run`:
+  - Previews the changes by printing the sorted content to stdout.
+  - No files will be modified when this flag is used.
+- `-r, --recursive`:
+  - Recursively sorts supported files in the specified directory.
+  - Files are modified in-place unless `-d, --dry-run` is also specified.
+  - If `-r` is used, a directory path must be provided as an argument.
+  - Cannot be used with stdin input (`-`) or the `-o, --out` flag.
 
 ## Examples
 
-Here's an example of using `tfsort` to sort a Terraform file called `main.tf`:
+1. **Sort a single file in-place:**
+    (Sorts `variable` and `output` blocks in `my_variables.tf` and overwrites the file)
 
-```bash
-tfsort variables.tf
-```
+    ```bash
+    tfsort my_variables.tf
+    ```
 
-This will sort the resources in `variables.tf` in place.
-You can also use the `--out` flag to specify an output file:
+2. **Sort a single file and write to a new file:**
 
-```bash
-tfsort --file variables.tf --out sorted.tf
-```
+    ```bash
+    tfsort my_variables.tf -o sorted_variables.tf
+    ```
 
-This will create a new file called `sorted.tf` with the sorted resources.
+3. **Preview changes for a single file (dry run):**
+    (Prints the sorted content to the console without modifying `my_variables.tf`)
 
-```bash
-tfsort variables.tf --dry-run
-```
+    ```bash
+    tfsort my_variables.tf -d
+    ```
 
-This will print the sorted resources to the console without altering the original file.
+4. **Sort content from stdin and print to stdout:**
+
+    ```bash
+    cat my_config.tf | tfsort -
+    ```
+
+    Or, if `tfsort` is part of a pipeline and no file argument is given:
+
+    ```bash
+    cat my_config.tf | tfsort
+    ```
+
+5. **Sort content from stdin and write to a file:**
+
+    ```bash
+    cat my_config.tf | tfsort - -o sorted_from_stdin.tf
+    ```
+
+6. **Recursively sort files in a directory (in-place):**
+    (Sorts all `.tf`, `.hcl`, `.tofu` files in `my_terraform_project/` and its subdirectories, modifying them in-place. Skips `.git`, `.terraform`, `.terragrunt-cache`.)
+
+    ```bash
+    tfsort -r ./my_terraform_project/
+    ```
+
+7. **Recursively sort files in a directory (dry run):**
+    (Prints what would be changed for each file to the console without modifying them.)
+
+    ```bash
+    tfsort -r ./my_terraform_project/ -d
+    ```
+
+## Contributing
+
+Contributions are welcome! Please read the [CONTRIBUTING.md](./CONTRIBUTING.md) file for guidelines on how to contribute to this project, including code contributions, bug reports, and feature suggestions.
+
+## Code of Conduct
+
+This project adheres to the Contributor Covenant Code of Conduct. By participating, you are expected to uphold this code. Please read the [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) file for details.
 
 ## Author
 
@@ -105,4 +219,4 @@ This project was created by [Alexander Nabokikh](https://www.linkedin.com/in/nab
 
 This software is available under the following licenses:
 
-- **[Apache 2.0](https://github.com/AlexNabokikh/tfsort/blob/master/LICENSE)**
+- **[Apache 2.0](./LICENSE)**
