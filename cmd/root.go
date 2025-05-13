@@ -17,7 +17,7 @@ import (
 var errShowHelp = errors.New("show help requested")
 
 // Execute is the entry point for the CLI.
-func Execute() {
+func Execute(version, commit, date string) {
 	var (
 		outputPath string
 		dryRun     bool
@@ -38,6 +38,25 @@ func Execute() {
 			}
 			return runSingleMode(cmd, ingestor, args, outputPath, dryRun)
 		},
+	}
+
+	// Set the version string for Cobra to use
+	if version != "" && version != "dev" {
+		rootCmd.Version = fmt.Sprintf(
+			"%s (commit: %s, built: %s)",
+			version,
+			commit,
+			date,
+		)
+	} else {
+		rootCmd.Version = "dev (build details not available)"
+		if version == "dev" && commit != "none" && date != "unknown" {
+			rootCmd.Version = fmt.Sprintf(
+				"dev (commit: %s, built: %s)",
+				commit,
+				date,
+			)
+		}
 	}
 
 	rootCmd.PersistentFlags().StringVarP(
