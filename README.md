@@ -64,15 +64,15 @@ To install `tfsort` using Homebrew:
 
 1. Add the tap:
 
-    ```bash
-    brew tap alexnabokikh/tfsort
-    ```
+   ```bash
+   brew tap alexnabokikh/tfsort
+   ```
 
 2. Install `tfsort`:
 
-    ```bash
-    brew install tfsort
-    ```
+   ```bash
+   brew install tfsort
+   ```
 
 ### Chocolatey (Windows)
 
@@ -102,18 +102,18 @@ Alternatively, build `tfsort` from source:
 
 1. Clone the repository:
 
-    ```bash
-    git clone https://github.com/AlexNabokikh/tfsort.git
-    cd tfsort
-    ```
+   ```bash
+   git clone https://github.com/AlexNabokikh/tfsort.git
+   cd tfsort
+   ```
 
 2. Build the binary:
 
-    ```bash
-    go build .
-    ```
+   ```bash
+   go build .
+   ```
 
-    This will create a `tfsort` executable in the current directory.
+   This will create a `tfsort` executable in the current directory.
 
 ## Usage
 
@@ -148,60 +148,64 @@ tfsort [file_or_directory|-] [flags]
   - Files are modified in-place unless `-d, --dry-run` is also specified.
   - If `-r` is used, a directory path must be provided as an argument.
   - Cannot be used with stdin input (`-`) or the `-o, --out` flag.
+- `-h, --help`:
+  - Displays a comprehensive help message, listing available commands, arguments, and flags with their descriptions.
+- `-v, --version`:
+  - Displays the installed version of the `tfsort` application, typically including the version number, commit hash, and build date if available.
 
 ## Examples
 
 1. **Sort a single file in-place:**
-    (Sorts `variable` and `output` blocks in `my_variables.tf` and overwrites the file)
+   (Sorts `variable` and `output` blocks in `my_variables.tf` and overwrites the file)
 
-    ```bash
-    tfsort my_variables.tf
-    ```
+   ```bash
+   tfsort my_variables.tf
+   ```
 
 2. **Sort a single file and write to a new file:**
 
-    ```bash
-    tfsort my_variables.tf -o sorted_variables.tf
-    ```
+   ```bash
+   tfsort my_variables.tf -o sorted_variables.tf
+   ```
 
 3. **Preview changes for a single file (dry run):**
-    (Prints the sorted content to the console without modifying `my_variables.tf`)
+   (Prints the sorted content to the console without modifying `my_variables.tf`)
 
-    ```bash
-    tfsort my_variables.tf -d
-    ```
+   ```bash
+   tfsort my_variables.tf -d
+   ```
 
 4. **Sort content from stdin and print to stdout:**
 
-    ```bash
-    cat my_config.tf | tfsort -
-    ```
+   ```bash
+   cat my_config.tf | tfsort -
+   ```
 
-    Or, if `tfsort` is part of a pipeline and no file argument is given:
+   Or, if `tfsort` is part of a pipeline and no file argument is given:
 
-    ```bash
-    cat my_config.tf | tfsort
-    ```
+   ```bash
+   cat my_config.tf | tfsort
+   ```
 
 5. **Sort content from stdin and write to a file:**
 
-    ```bash
-    cat my_config.tf | tfsort - -o sorted_from_stdin.tf
-    ```
+   ```bash
+   cat my_config.tf | tfsort - -o sorted_from_stdin.tf
+   ```
 
 6. **Recursively sort files in a directory (in-place):**
-    (Sorts all `.tf`, `.hcl`, `.tofu` files in `my_terraform_project/` and its subdirectories, modifying them in-place. Skips `.git`, `.terraform`, `.terragrunt-cache`.)
+   (Sorts all `.tf`, `.hcl`, `.tofu` files in `my_terraform_project/` and its subdirectories, modifying them in-place. Skips `.git`, `.terraform`, `.terragrunt-cache`.)
 
-    ```bash
-    tfsort -r ./my_terraform_project/
-    ```
+   ```bash
+   tfsort -r ./my_terraform_project/
+   ```
 
 7. **Recursively sort files in a directory (dry run):**
-    (Prints what would be changed for each file to the console without modifying them.)
+   (Prints what would be changed for each file to the console without modifying them.)
 
-    ```bash
-    tfsort -r ./my_terraform_project/ -d
-    ```
+   ```bash
+   tfsort -r ./my_terraform_project/ -d
+   ```
 
 ## Contributing
 
