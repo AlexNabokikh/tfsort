@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log"
+
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,6 +39,9 @@ func Execute(version, commit, date string) {
 			return runSingleMode(cmd, ingestor, args, outputPath, dryRun)
 		},
 	}
+
+	// SilenceUsage ensures that the usage message is not printed on every error.
+	rootCmd.SilenceUsage = true
 
 	// Set the version string for Cobra to use
 	if version != "" && version != "dev" {
@@ -81,9 +84,7 @@ func Execute(version, commit, date string) {
 	)
 
 	if err := rootCmd.Execute(); err != nil {
-		if !errors.Is(err, errShowHelp) {
-			log.Fatalf("error: %s", err)
-		}
+		os.Exit(1)
 	}
 }
 
