@@ -8,7 +8,7 @@
 
 ![Logo](files/logo.png)
 
-`tfsort` is a command-line utility designed for meticulous engineers who prefer to keep their Terraform `variable` and `output` blocks sorted alphabetically. It also corrects spacing issues between these blocks and removes leading or trailing newlines in the processed files. `tfsort` can read from files or stdin, write to files or stdout, and process directories recursively.
+`tfsort` is a command-line utility designed for meticulous engineers who prefer to keep their Terraform `variable`, `output` and `terraform` blocks sorted alphabetically. It also corrects spacing issues between these blocks and removes leading or trailing newlines in the processed files. `tfsort` can read from files or stdin, write to files or stdout, and process directories recursively.
 
 ## Contents
 
@@ -37,7 +37,7 @@
 
 ## Key Features
 
-- **Alphabetical Sorting**: Sorts `variable` and `output` blocks within your HCL files.
+- **Alphabetical Sorting**: Sorts `variable`, `output` and `terraform` blocks within your HCL files.
 - **Flexible Input/Output**:
   - Read from a specific file or standard input (stdin).
   - Overwrite the input file, write to a new file, or print to standard output (stdout).
@@ -156,7 +156,7 @@ tfsort [file_or_directory|-] [flags]
 ## Examples
 
 1. **Sort a single file in-place:**
-   (Sorts `variable` and `output` blocks in `my_variables.tf` and overwrites the file)
+   (Sorts `variable`, `output` and `terraform` blocks in `my_variables.tf` and overwrites the file)
 
    ```bash
    tfsort my_variables.tf
