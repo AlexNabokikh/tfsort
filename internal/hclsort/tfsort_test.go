@@ -491,3 +491,34 @@ func TestValidateFilePath(t *testing.T) {
 		}
 	})
 }
+
+func TestSortRequiredProvidersInBlock(t *testing.T) {
+	const hclInput = `
+terraform {
+  required_providers {
+    z = { source = "provider/z" }
+    a = { source = "provider/a" }
+  }
+  required_versions = ">= 1.0"
+}
+`
+
+	file, err := hclsort.ParseHCLContent([]byte(hclInput), "testfile.tf")
+	if err != nil {
+		t.Fatalf("ParseHCLContent failed: %v", err)
+	}
+
+	sortedFile := hclsort.ProcessAndSortBlocks(file, map[string]bool{})
+
+	output := string(hclsort.FormatHCLBytes(sortedFile))
+
+	idxA := strings.Index(output, "a =")
+	idxZ := strings.Index(output, "z =")
+
+	if idxA < 0 || idxZ < 0 {
+		t.Fatalf("did not find both providers in output:\n%s", output)
+	}
+	if idxA > idxZ {
+		t.Errorf("expected provider “a” to appear before “z”,\noutput was:\n%s", output)
+	}
+}
