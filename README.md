@@ -33,7 +33,7 @@
 
 ## Demo
 
-![Demo](files/demo.gif)
+[![asciicast](https://asciinema.org/a/5EpZOwIhHnMgCZT9NUx5h8vfN.svg)](https://asciinema.org/a/5EpZOwIhHnMgCZT9NUx5h8vfN)
 
 ## Key Features
 
