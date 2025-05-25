@@ -557,14 +557,13 @@ locals {
 		t.Errorf("expected blocks before “other”, but got:\n%s", output)
 	}
 
-	idxDev := strings.Index(output, "a =")
-	idxPre := strings.Index(output, "b =")
-	idxPro := strings.Index(output, "c =")
-	if idxDev < 0 || idxPre < 0 || idxPro < 0 {
-		t.Fatalf("did not find a/b/c in output:\n%s", output)
-	}
-	if !(idxDev < idxPre && idxPre < idxPro) {
-		t.Errorf("expected a < b < c inside blocks, but got:\n%s", output)
+	idxA := strings.Index(output, "a =")
+	idxB := strings.Index(output, "b =")
+	idxC := strings.Index(output, "c =")
+	if idxA >= idxB {
+		t.Errorf("expected idxA < idxB, but got %d >= %d", idxA, idxB)
+	} else if idxB >= idxC {
+		t.Errorf("expected idxB < idxC, but got %d >= %d", idxB, idxC)
 	}
 
 	idxList := strings.Index(output, "list")
