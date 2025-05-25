@@ -560,10 +560,8 @@ locals {
 	idxA := strings.Index(output, "a =")
 	idxB := strings.Index(output, "b =")
 	idxC := strings.Index(output, "c =")
-	if idxA >= idxB {
-		t.Errorf("expected idxA < idxB, but got %d >= %d", idxA, idxB)
-	} else if idxB >= idxC {
-		t.Errorf("expected idxB < idxC, but got %d >= %d", idxB, idxC)
+	if idxA >= idxB || idxB >= idxC {
+		t.Errorf("expected a < b < c inside blocks, but got:\n%s", output)
 	}
 
 	idxList := strings.Index(output, "list")
