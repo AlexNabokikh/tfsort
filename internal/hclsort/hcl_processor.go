@@ -29,8 +29,7 @@ func ParseHCLContent(
 	return file, nil
 }
 
-// sortRequiredProvidersInBlock sorts the entries in any required_providers block
-// within a terraform block, alphabetically by provider name, preserving tokens.
+// sortRequiredProvidersInBlock sorts the entries in any required_providers block.
 func sortRequiredProvidersInBlock(block *hclwrite.Block) {
 	for _, b := range block.Body().Blocks() {
 		if b.Type() != "required_providers" {
@@ -68,15 +67,50 @@ func sortRequiredProvidersInBlock(block *hclwrite.Block) {
 	}
 }
 
-// ProcessAndSortBlocks extracts sortable blocks (variables, outputs) from the HCL file
-// and also applies provider sorting in terraform blocks.
+// sortLocalsBlock sorts the top‐level assignments in a locals block.
+func sortLocalsBlock(block *hclwrite.Block) {
+	body := block.Body()
+	attrs := body.Attributes()
+
+	names := make([]string, 0, len(attrs))
+	for name := range attrs {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	body.Clear()
+	body.AppendNewline()
+	for i, name := range names {
+		attr := attrs[name]
+		tokens := attr.BuildTokens(nil)
+
+		start, end := 0, len(tokens)
+		for start < end && tokens[start].Type == hclsyntax.TokenNewline {
+			start++
+		}
+		for end > start && tokens[end-1].Type == hclsyntax.TokenNewline {
+			end--
+		}
+
+		body.AppendUnstructuredTokens(tokens[start:end])
+		if i+1 < len(names) {
+			body.AppendNewline()
+		}
+	}
+	body.AppendNewline()
+}
+
+// ProcessAndSortBlocks extracts sortable blocks (variables, outputs, locals, terraform) and sorts them.
 func ProcessAndSortBlocks(
 	file *hclwrite.File,
 	allowedBlocks map[string]bool,
 ) *hclwrite.File {
 	for _, block := range file.Body().Blocks() {
-		if block.Type() == "terraform" {
+		switch block.Type() {
+		case "terraform":
 			sortRequiredProvidersInBlock(block)
+		case "locals":
+			sortLocalsBlock(block)
 		}
 	}
 
