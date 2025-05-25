@@ -522,3 +522,54 @@ terraform {
 		t.Errorf("expected provider “a” to appear before “z”,\noutput was:\n%s", output)
 	}
 }
+
+func TestSortLocalsBlock(t *testing.T) {
+	const hclInput = `
+locals {
+  other = 42
+
+  blocks = {
+    a = {
+      list   = [1, 23, 6]
+      string = "yes"
+    }
+    b = {}
+    c = {}
+  }
+}
+`
+
+	file, err := hclsort.ParseHCLContent([]byte(hclInput), "test.tf")
+	if err != nil {
+		t.Fatalf("ParseHCLContent failed: %v", err)
+	}
+
+	sortedFile := hclsort.ProcessAndSortBlocks(file, map[string]bool{})
+
+	output := string(hclsort.FormatHCLBytes(sortedFile))
+
+	idxBlocks := strings.Index(output, "blocks")
+	idxOther := strings.Index(output, "other =")
+	if idxBlocks < 0 || idxOther < 0 {
+		t.Fatalf("did not find both locals entries in output:\n%s", output)
+	}
+	if idxBlocks > idxOther {
+		t.Errorf("expected blocks before “other”, but got:\n%s", output)
+	}
+
+	idxA := strings.Index(output, "a =")
+	idxB := strings.Index(output, "b =")
+	idxC := strings.Index(output, "c =")
+	if idxA >= idxB || idxB >= idxC {
+		t.Errorf("expected a < b < c inside blocks, but got:\n%s", output)
+	}
+
+	idxList := strings.Index(output, "list")
+	idxString := strings.Index(output, "string")
+	if idxList < 0 || idxString < 0 {
+		t.Fatalf("did not find nested attributes in output:\n%s", output)
+	}
+	if idxList > idxString {
+		t.Errorf("expected list before string, but got:\n%s", output)
+	}
+}
