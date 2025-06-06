@@ -17,6 +17,7 @@
 - [Supported File Types](#supported-file-types)
 - [Installation](#installation)
   - [Homebrew](#homebrew)
+  - [Nix](#nix)
   - [Chocolatey (Windows)](#chocolatey-windows)
   - [Using `go install`](#using-go-install)
   - [Binary Release](#binary-release)
@@ -73,6 +74,12 @@ To install `tfsort` using Homebrew:
    ```bash
    brew install tfsort
    ```
+
+### Nix
+
+```bash
+nix-env -iA nixpkgs.tfsort
+```
 
 ### Chocolatey (Windows)
 
