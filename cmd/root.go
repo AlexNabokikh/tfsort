@@ -13,30 +13,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// errShowHelp is a sentinel error used to indicate that help should be shown.
-var errShowHelp = errors.New("show help requested")
-
 // Execute is the entry point for the CLI.
 func Execute(version, commit, date string) {
 	var (
 		outputPath string
 		dryRun     bool
-		recursive  bool
 	)
 
 	rootCmd := &cobra.Command{
-		Use: "tfsort [file_or_directory|-]",
-		Short: "A utility to sort Terraform variables and outputs. " +
-			"If no file is specified or '-' is used as the filename, input is read from stdin. " +
-			"If a directory is provided with -r, files are processed recursively.",
-		Args: cobra.MaximumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Use:   "tfsort [flags] [files...]",
+		Short: "A utility to sort Terraform variables and outputs.",
+		Args:  cobra.ArbitraryArgs,
+		RunE: func(_ *cobra.Command, args []string) error {
 			ingestor := hclsort.NewIngestor()
-
-			if recursive {
-				return runRecursiveMode(ingestor, args, dryRun, outputPath)
+			paths, err := argsToPaths(args)
+			if err != nil {
+				return err
 			}
-			return runSingleMode(cmd, ingestor, args, outputPath, dryRun)
+
+			return processPaths(ingestor, paths, dryRun, outputPath)
 		},
 	}
 
@@ -75,71 +70,79 @@ func Execute(version, commit, date string) {
 		"d", false,
 		"preview the changes without altering the original file(s).",
 	)
-	rootCmd.PersistentFlags().BoolVarP(
-		&recursive,
-		"recursive",
-		"r",
-		false,
-		"recursively sort files in a directory (in-place unless --dry-run is specified)",
-	)
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
 
-// runRecursiveMode handles the logic when the --recursive flag is used.
-func runRecursiveMode(
-	ingestor *hclsort.Ingestor,
-	args []string,
-	isDryRun bool,
-	outPath string,
-) error {
-	if outPath != "" {
-		return errors.New(
-			"the -o/--out flag cannot be used with -r/--recursive",
-		)
-	}
+func argsToPaths(args []string) ([]string, error) {
 	if len(args) == 0 {
-		return errors.New(
-			"a directory path must be specified when using --recursive",
-		)
-	}
-	inputPath := args[0]
-	if inputPath == "-" {
-		return errors.New("stdin input ('-') cannot be used with --recursive")
+		return []string{"."}, nil // default to current directory
 	}
 
-	info, err := os.Stat(inputPath)
-	if err != nil {
-		return fmt.Errorf(
-			"failed to stat input path '%s': %w",
-			inputPath,
-			err,
-		)
-	}
-	if !info.IsDir() {
-		return fmt.Errorf(
-			"inputPath '%s' is not a directory; --recursive requires a directory",
-			inputPath,
-		)
+	if len(args) == 1 && args[0] == "-" {
+		isStdin, err := useStdin()
+		if err != nil {
+			return args, err
+		}
+
+		if isStdin {
+			return []string{hclsort.StdInPathIdentifier}, nil
+		}
 	}
 
-	if !isDryRun {
-		fmt.Printf("Recursively processing directory: %s\n", inputPath)
+	return args, nil
+}
+
+// processPaths processes the provided paths, handling both files and directories.
+// It will walk through directories recursively.
+func processPaths(
+	ingestor *hclsort.Ingestor,
+	paths []string,
+	dryRun bool,
+	outputPath string,
+) error {
+	if len(paths) == 1 && paths[0] == hclsort.StdInPathIdentifier {
+		return ingestor.Parse(paths[0], outputPath, dryRun, true)
 	}
 
-	walkErr := filepath.WalkDir(
-		inputPath,
-		newWalkDirCallback(ingestor, isDryRun),
-	)
-	if walkErr != nil {
-		return fmt.Errorf(
-			"error walking directory '%s': %w",
-			inputPath,
-			walkErr,
-		)
+	pathErrors := []error{}
+	for _, path := range paths {
+		stat, statErr := os.Stat(path)
+		if statErr != nil {
+			pathErrors = append(pathErrors, fmt.Errorf("failed to stat path: %w", statErr))
+			continue
+		}
+
+		if stat.IsDir() {
+			// Recursive
+			err := filepath.WalkDir(path, newWalkDirCallback(ingestor, dryRun))
+			if err != nil {
+				pathErrors = append(pathErrors, fmt.Errorf("error walking directory '%s': %w", path, err))
+			}
+		} else {
+			// Single file
+			if err := hclsort.ValidateFilePath(path); err != nil {
+				pathErrors = append(pathErrors, fmt.Errorf("error validating file '%s': %w", path, err))
+				continue
+			}
+
+			err := ingestor.Parse(path, outputPath, dryRun, false)
+			if err != nil {
+				pathErrors = append(pathErrors, fmt.Errorf("error processing file '%s': %w", path, err))
+			}
+		}
 	}
+
+	if len(pathErrors) > 0 {
+		errStrings := make([]string, len(pathErrors))
+		for i, e := range pathErrors {
+			errStrings[i] = e.Error()
+		}
+		return fmt.Errorf("could not process all paths:\n%s", strings.Join(errStrings, "\n"))
+	}
+
 	return nil
 }
 
@@ -148,18 +151,19 @@ func newWalkDirCallback(
 	ingestor *hclsort.Ingestor,
 	isDryRun bool,
 ) fs.WalkDirFunc {
-	return func(currentPath string, d fs.DirEntry, errInWalk error) error {
-		if errInWalk != nil {
+	return func(currentPath string, d fs.DirEntry, err error) error {
+		if err != nil {
 			fmt.Fprintf(
 				os.Stderr,
 				"Warning: error accessing path %s: %v\n",
 				currentPath,
-				errInWalk,
+				err,
 			)
-			if errors.Is(errInWalk, fs.ErrPermission) {
+			if errors.Is(err, fs.ErrPermission) {
 				return nil
 			}
-			return errInWalk
+
+			return err
 		}
 
 		if d.IsDir() {
@@ -172,6 +176,7 @@ func newWalkDirCallback(
 				}
 				return filepath.SkipDir
 			}
+
 			return nil
 		}
 
@@ -183,63 +188,25 @@ func newWalkDirCallback(
 		if !isDryRun {
 			fmt.Printf("Processing %s...\n", currentPath)
 		}
-		errParse := ingestor.Parse(currentPath, "", isDryRun, false)
-		if errParse != nil {
+		err = ingestor.Parse(currentPath, "", isDryRun, false)
+		if err != nil {
 			fmt.Fprintf(
 				os.Stderr,
 				"Error sorting file %s: %v\n",
 				currentPath,
-				errParse,
+				err,
 			)
 		}
 		return nil
 	}
 }
 
-// runSingleMode handles the logic for a single file input or stdin.
-func runSingleMode(
-	cmd *cobra.Command,
-	ingestor *hclsort.Ingestor,
-	args []string,
-	outPath string,
-	isDryRun bool,
-) error {
-	currentInputPath, isStdin, err := determineInputSource(args)
-	if err != nil {
-		if errors.Is(err, errShowHelp) {
-			_ = cmd.Help()
-			return nil
-		}
-		return err
+// useStdin determines whether to read stdin.
+func useStdin() (bool, error) {
+	stat, statErr := os.Stdin.Stat()
+	if statErr != nil {
+		return false, fmt.Errorf("failed to stat stdin: %w", statErr)
 	}
 
-	if !isStdin {
-		if validationErr := hclsort.ValidateFilePath(currentInputPath); validationErr != nil {
-			return validationErr
-		}
-	}
-
-	return ingestor.Parse(currentInputPath, outPath, isDryRun, isStdin)
-}
-
-// determineInputSource determines the input path and whether it's from stdin.
-func determineInputSource(
-	args []string,
-) (string, bool, error) {
-	if len(args) == 0 {
-		stat, statErr := os.Stdin.Stat()
-		if statErr != nil {
-			return "", false, fmt.Errorf("failed to stat stdin: %w", statErr)
-		}
-		if (stat.Mode() & os.ModeCharDevice) == 0 {
-			return hclsort.StdInPathIdentifier, true, nil
-		}
-		return "", false, errShowHelp
-	}
-
-	pathArg := args[0]
-	if pathArg == "-" {
-		return hclsort.StdInPathIdentifier, true, nil
-	}
-	return pathArg, false, nil
+	return (stat.Mode() & os.ModeCharDevice) == 0, nil
 }
