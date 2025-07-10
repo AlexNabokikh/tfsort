@@ -1,6 +1,7 @@
 package hclsort_test
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -8,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/AlexNabokikh/tfsort/internal/hclsort"
+	"github.com/google/go-cmp/cmp"
 )
 
 const (
@@ -571,5 +573,64 @@ locals {
 	}
 	if idxList > idxString {
 		t.Errorf("expected list before string, but got:\n%s", output)
+	}
+}
+
+func testsFromFixtures(t *testing.T, testNames []string) map[string]struct {
+	hclInput string
+	want     string
+} {
+	t.Helper()
+	tests := make(map[string]struct {
+		hclInput string
+		want     string
+	})
+
+	for _, testName := range testNames {
+		hclInputPath := filepath.Join("testdata", "fixtures", fmt.Sprintf("%s_input.tf", testName))
+		wantPath := filepath.Join("testdata", "fixtures", fmt.Sprintf("%s_expected.tf", testName))
+
+		hclInput, err := os.ReadFile(hclInputPath)
+		if err != nil {
+			t.Fatalf("Failed to read input file %s: %v", hclInputPath, err)
+		}
+
+		want, err := os.ReadFile(wantPath)
+		if err != nil {
+			t.Fatalf("Failed to read expected output file %s: %v", wantPath, err)
+		}
+
+		tests[testName] = struct {
+			hclInput string
+			want     string
+		}{
+			hclInput: string(hclInput),
+			want:     string(want),
+		}
+	}
+
+	return tests
+}
+func TestProcessFixtures(t *testing.T) {
+	t.Parallel()
+
+	tests := testsFromFixtures(t, []string{
+		"unchanged",
+	})
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			file, err := hclsort.ParseHCLContent([]byte(tc.hclInput), "test.tf")
+			if err != nil {
+				t.Fatalf("ParseHCLContent failed: %v", err)
+			}
+			sortedFile := hclsort.ProcessAndSortBlocks(file, map[string]bool{})
+			got := string(hclsort.FormatHCLBytes(sortedFile))
+
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Errorf("expected output to match expected output, but got:\n%s", diff)
+			}
+		})
 	}
 }
