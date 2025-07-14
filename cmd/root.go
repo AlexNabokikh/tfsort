@@ -24,7 +24,11 @@ func Execute(version, commit, date string) {
 		Use:   "tfsort [flags] [files...]",
 		Short: "A utility to sort Terraform variables and outputs.",
 		Args:  cobra.ArbitraryArgs,
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return cmd.Help()
+			}
+
 			ingestor := hclsort.NewIngestor()
 			paths, err := argsToPaths(args)
 			if err != nil {
@@ -62,7 +66,7 @@ func Execute(version, commit, date string) {
 		"out",
 		"o",
 		"",
-		"path to the output file (cannot be used with --recursive)",
+		"path to the output file (cannot be used when path is used as an argument)",
 	)
 	rootCmd.PersistentFlags().BoolVarP(
 		&dryRun,
@@ -77,10 +81,6 @@ func Execute(version, commit, date string) {
 }
 
 func argsToPaths(args []string) ([]string, error) {
-	if len(args) == 0 {
-		return []string{"."}, nil // default to current directory
-	}
-
 	if len(args) == 1 && args[0] == "-" {
 		isStdin, err := useStdin()
 		if err != nil {
