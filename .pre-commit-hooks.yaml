@@ -1,0 +1,7 @@
+- id: tfsort
+  name: tfsort
+  description: This hook uses github.com/AlexNabokikh/tfsort to sort terraform files
+  entry: tfsort
+  language: golang
+  files: \.(tf|tofu)$
+  exclude: \.terraform/.*$
