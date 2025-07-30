@@ -40,10 +40,10 @@
 
 - **Alphabetical Sorting**: Sorts `variable`, `output`, `locals` and `terraform` blocks within your HCL files.
 - **Flexible Input/Output**:
-  - Read from a specific file or standard input (stdin).
+  - Read from a specific file, directory or standard input (stdin).
   - Overwrite the input file, write to a new file, or print to standard output (stdout).
 - **Recursive Processing**: Sort files in an entire directory and its subdirectories.
-  - Intelligently skips common version control (`.git`) and Terraform utility directories (`.terraform`, `.terragrunt-cache`).
+  - Skips common version control (`.git`) and Terraform utility directories (`.terraform`, `.terragrunt-cache`).
 - **Dry Run Mode**: Preview changes without modifying any files.
 - **Code Formatting**:
   - Corrects spacing between sorted blocks.
@@ -127,17 +127,15 @@ Alternatively, build `tfsort` from source:
 ### Command Synopsis
 
 ```bash
-tfsort [file_or_directory|-] [flags]
+tfsort [flags] [files...]
 ```
 
 ### Arguments
 
-- `file_or_directory` (optional):
-  - Path to a single Terraform/HCL file (e.g., `variables.tf`).
-  - Path to a directory to process recursively (requires the `-r` flag).
-- `-` (optional):
-  - Instructs `tfsort` to read input from stdin.
-- If no file/directory argument is provided and stdin is detected as a pipe (e.g., `cat file.tf | tfsort`), `tfsort` will read from stdin.
+- `files`
+  - Path to Terraform/HCL files (e.g., `variables.tf`)
+  - Path to directories to process recursively
+  - The character `-` instructs `tfsort` to read input from _standard input (stdin). For example `cat file.tf | tfsort -` will read from stdin.
 - If no arguments are provided and stdin is not a pipe, `tfsort` will show the help message.
 
 ### Flags
@@ -150,11 +148,6 @@ tfsort [file_or_directory|-] [flags]
 - `-d, --dry-run`:
   - Previews the changes by printing the sorted content to stdout.
   - No files will be modified when this flag is used.
-- `-r, --recursive`:
-  - Recursively sorts supported files in the specified directory.
-  - Files are modified in-place unless `-d, --dry-run` is also specified.
-  - If `-r` is used, a directory path must be provided as an argument.
-  - Cannot be used with stdin input (`-`) or the `-o, --out` flag.
 - `-h, --help`:
   - Displays a comprehensive help message, listing available commands, arguments, and flags with their descriptions.
 - `-v, --version`:
@@ -172,14 +165,14 @@ tfsort [file_or_directory|-] [flags]
 2. **Sort a single file and write to a new file:**
 
    ```bash
-   tfsort my_variables.tf -o sorted_variables.tf
+   tfsort -o sorted_variables.tf my_variables.tf
    ```
 
 3. **Preview changes for a single file (dry run):**
    (Prints the sorted content to the console without modifying `my_variables.tf`)
 
    ```bash
-   tfsort my_variables.tf -d
+   tfsort -d my_variables.tf
    ```
 
 4. **Sort content from stdin and print to stdout:**
@@ -188,30 +181,24 @@ tfsort [file_or_directory|-] [flags]
    cat my_config.tf | tfsort -
    ```
 
-   Or, if `tfsort` is part of a pipeline and no file argument is given:
-
-   ```bash
-   cat my_config.tf | tfsort
-   ```
-
 5. **Sort content from stdin and write to a file:**
 
    ```bash
-   cat my_config.tf | tfsort - -o sorted_from_stdin.tf
+   cat my_config.tf | tfsort -o sorted_from_stdin.tf -
    ```
 
 6. **Recursively sort files in a directory (in-place):**
    (Sorts all `.tf`, `.hcl`, `.tofu` files in `my_terraform_project/` and its subdirectories, modifying them in-place. Skips `.git`, `.terraform`, `.terragrunt-cache`.)
 
    ```bash
-   tfsort -r ./my_terraform_project/
+   tfsort ./my_terraform_project/
    ```
 
 7. **Recursively sort files in a directory (dry run):**
    (Prints what would be changed for each file to the console without modifying them.)
 
    ```bash
-   tfsort -r ./my_terraform_project/ -d
+   tfsort -d ./my_terraform_project/
    ```
 
 ## Contributing
