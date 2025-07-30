@@ -3,8 +3,8 @@
 [![badge-gh-ci](https://github.com/AlexNabokikh/tfsort/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexNabokikh/tfsort/actions/workflows/ci.yml/badge.svg)
 [![badge-gh-release](https://github.com/AlexNabokikh/tfsort/actions/workflows/release.yml/badge.svg)](https://github.com/AlexNabokikh/tfsort/actions/workflows/release.yml/badge.svg)
 [![go-report-card](https://goreportcard.com/badge/github.com/AlexNabokikh/tfsort)](https://goreportcard.com/report/github.com/AlexNabokikh/tfsort)
-[![maintainability](https://api.codeclimate.com/v1/badges/7d6a9fee7a8775dea0d8/maintainability)](https://codeclimate.com/github/AlexNabokikh/tfsort/maintainability)
-[![test-coverage](https://api.codeclimate.com/v1/badges/7d6a9fee7a8775dea0d8/test_coverage)](https://codeclimate.com/github/AlexNabokikh/tfsort/test_coverage)
+[![maintainability](https://qlty.sh/gh/AlexNabokikh/projects/tfsort/maintainability.svg)](https://qlty.sh/gh/AlexNabokikh/projects/tfsort)
+[![code Coverage](https://qlty.sh/gh/AlexNabokikh/projects/tfsort/coverage.svg)](https://qlty.sh/gh/AlexNabokikh/projects/tfsort)
 
 ![Logo](files/logo.png)
 
