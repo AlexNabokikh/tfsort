@@ -6,7 +6,7 @@ Want to contribute? Great! First, read this page.
 
 - Direct contributions
   - **Create pull requests directly.**
-  - Please send e-mails to nabokikh@duck.com if you have any questions.
+  - Please send e-mails to [nabokikh@duck.com](nabokikh@duck.com) if you have any questions.
 - Feedback suggestions and bugs.
   - We use GitHub issues to track bugs and features.
   - For bugs and general issues please [file a new issue](https://github.com/AlexNabokikh/tfsort/issues/new).
