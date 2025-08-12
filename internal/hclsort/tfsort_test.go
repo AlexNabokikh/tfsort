@@ -615,6 +615,7 @@ func TestProcessFixtures(t *testing.T) {
 	t.Parallel()
 
 	tests := testsFromFixtures(t, []string{
+		"comments",
 		"unchanged",
 	})
 	for name, tc := range tests {
