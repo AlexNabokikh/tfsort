@@ -2,7 +2,6 @@
 
 [![badge-gh-ci](https://github.com/AlexNabokikh/tfsort/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexNabokikh/tfsort/actions/workflows/ci.yml/badge.svg)
 [![badge-gh-release](https://github.com/AlexNabokikh/tfsort/actions/workflows/release.yml/badge.svg)](https://github.com/AlexNabokikh/tfsort/actions/workflows/release.yml/badge.svg)
-[![go-report-card](https://goreportcard.com/badge/github.com/AlexNabokikh/tfsort)](https://goreportcard.com/report/github.com/AlexNabokikh/tfsort)
 [![maintainability](https://qlty.sh/gh/AlexNabokikh/projects/tfsort/maintainability.svg)](https://qlty.sh/gh/AlexNabokikh/projects/tfsort)
 [![code Coverage](https://qlty.sh/gh/AlexNabokikh/projects/tfsort/coverage.svg)](https://qlty.sh/gh/AlexNabokikh/projects/tfsort)
 
@@ -54,7 +53,7 @@
     "section banner") keeps that group sorted beneath it — items never
     get reordered out from under the comment that describes them.
   - One effect of this: a file with such comments isn't necessarily
-    fully globally alphabetized. Items are sorted *within* each
+    fully globally alphabetized. Items are sorted _within_ each
     comment-delimited group, and groups keep their original relative
     order, so that no comment ever ends up describing the wrong thing.
 
