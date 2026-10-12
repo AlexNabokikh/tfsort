@@ -33,7 +33,7 @@
 
 ## Demo
 
-[![asciicast](https://asciinema.org/a/5EpZOwIhHnMgCZT9NUx5h8vfN.svg)](https://asciinema.org/a/5EpZOwIhHnMgCZT9NUx5h8vfN)
+[![Watch the tfsort terminal demo on asciinema](https://asciinema.org/a/720454.png)](https://asciinema.org/a/720454)
 
 ## Key Features
 
@@ -80,7 +80,7 @@ To install `tfsort` using Homebrew:
 2. Install `tfsort`:
 
    ```bash
-   brew install tfsort
+   brew install --cask tfsort
    ```
 
 ### Nix

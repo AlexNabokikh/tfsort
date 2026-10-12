@@ -45,7 +45,7 @@ lint:
 	@echo "Linting code using golangci-lint..."
 	@command -v golangci-lint >/dev/null 2>&1 || { \
 		echo >&2 "golangci-lint not found. Please install it first."; \
-		echo >&2 "See: https://golangci-lint.run/usage/install/"; \
+		echo >&2 "See: https://golangci-lint.run/docs/welcome/install/local/"; \
 		echo >&2 "Alternatively, run 'make setup-lint' to try to install it."; \
 		exit 1; \
 	}
@@ -53,7 +53,7 @@ lint:
 
 setup-lint:
 	@echo "Attempting to install golangci-lint..."
-	$(GOCMD) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	$(GOCMD) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 
 clean:
 	@echo "Cleaning up build artifacts and coverage files..."

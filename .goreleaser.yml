@@ -18,20 +18,39 @@ builds:
 
 release:
   prerelease: auto
+  preflight:
+    fail_on_error: true
 
 universal_binaries:
   - replace: true
 
-brews:
+archives:
+  - formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+
+homebrew_casks:
   - name: tfsort
     description: "Sort Terraform files"
     homepage: "https://github.com/AlexNabokikh/tfsort"
+    binaries:
+      - tfsort
     repository:
       owner: alexnabokikh
       name: homebrew-tfsort
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     commit_author:
       name: Alex Nabokikh
       email: nabokikh@duck.com
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/tfsort"]
+          end
 
 chocolateys:
   - name: tfsort
