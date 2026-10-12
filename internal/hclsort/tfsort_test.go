@@ -445,7 +445,11 @@ func TestParse(t *testing.T) {
 				t.Errorf("Expected HCL parsing error from stdin, but got: %v", err)
 			}
 			if !strings.Contains(err.Error(), hclsort.StdInPathIdentifier) {
-				t.Errorf("Expected error message for stdin to contain '%s', but got: %v", hclsort.StdInPathIdentifier, err.Error())
+				t.Errorf(
+					"Expected error message for stdin to contain '%s', but got: %v",
+					hclsort.StdInPathIdentifier,
+					err.Error(),
+				)
 			}
 		}
 	})
@@ -576,6 +580,135 @@ locals {
 	}
 }
 
+func TestSortLocalsBlockEmpty(t *testing.T) {
+	const hclInput = `
+locals {
+}
+`
+
+	file, err := hclsort.ParseHCLContent([]byte(hclInput), "test.tf")
+	if err != nil {
+		t.Fatalf("ParseHCLContent failed: %v", err)
+	}
+
+	sortedFile := hclsort.ProcessAndSortBlocks(file, map[string]bool{})
+	output := string(hclsort.FormatHCLBytes(sortedFile))
+
+	if !strings.Contains(output, "locals {") {
+		t.Errorf("expected an empty locals block to survive unchanged, but got:\n%s", output)
+	}
+}
+
+func TestProcessAndSortBlocksEmptyFile(t *testing.T) {
+	file, err := hclsort.ParseHCLContent([]byte(""), "test.tf")
+	if err != nil {
+		t.Fatalf("ParseHCLContent failed: %v", err)
+	}
+
+	sortedFile := hclsort.ProcessAndSortBlocks(file, map[string]bool{"variable": true})
+	output := string(hclsort.FormatHCLBytes(sortedFile))
+
+	if strings.TrimSpace(output) != "" {
+		t.Errorf("expected an empty file to stay empty, but got:\n%s", output)
+	}
+}
+
+func TestSortRequiredProvidersInBlockSkipsOtherNestedBlocks(t *testing.T) {
+	const hclInput = `
+terraform {
+  backend "s3" {
+    bucket = "my-state"
+  }
+  required_providers {
+    z = { source = "provider/z" }
+    a = { source = "provider/a" }
+  }
+}
+`
+
+	file, err := hclsort.ParseHCLContent([]byte(hclInput), "testfile.tf")
+	if err != nil {
+		t.Fatalf("ParseHCLContent failed: %v", err)
+	}
+
+	sortedFile := hclsort.ProcessAndSortBlocks(file, map[string]bool{})
+	output := string(hclsort.FormatHCLBytes(sortedFile))
+
+	if !strings.Contains(output, `backend "s3"`) {
+		t.Fatalf("expected the backend block to survive untouched, but got:\n%s", output)
+	}
+
+	idxA := strings.Index(output, "a =")
+	idxZ := strings.Index(output, "z =")
+	if idxA < 0 || idxZ < 0 {
+		t.Fatalf("did not find both providers in output:\n%s", output)
+	}
+	if idxA > idxZ {
+		t.Errorf("expected provider “a” to appear before “z”,\noutput was:\n%s", output)
+	}
+}
+
+// TestProcessAndSortBlocksSectionBanners covers the top-level counterpart
+// to reorderBodyAttributes' section grouping: a floating comment above a
+// group of variable blocks keeps that group sorted beneath it, and two
+// such groups stay in their original relative order and never merge.
+func TestProcessAndSortBlocksSectionBanners(t *testing.T) {
+	const hclInput = `
+# ---- Networking ----
+
+variable "zeta_net" {
+  description = "z"
+}
+
+variable "alpha_net" {
+  description = "a"
+}
+
+# ---- Compute ----
+
+variable "zulu_cpu" {
+  description = "z"
+}
+
+variable "alpha_cpu" {
+  description = "a"
+}
+`
+	const want = `
+# ---- Networking ----
+
+variable "alpha_net" {
+  description = "a"
+}
+
+variable "zeta_net" {
+  description = "z"
+}
+
+# ---- Compute ----
+
+variable "alpha_cpu" {
+  description = "a"
+}
+
+variable "zulu_cpu" {
+  description = "z"
+}
+`
+
+	file, err := hclsort.ParseHCLContent([]byte(hclInput), "testfile.tf")
+	if err != nil {
+		t.Fatalf("ParseHCLContent failed: %v", err)
+	}
+
+	sortedFile := hclsort.ProcessAndSortBlocks(file, map[string]bool{"variable": true})
+	output := string(hclsort.FormatHCLBytes(sortedFile))
+
+	if diff := cmp.Diff(want, output); diff != "" {
+		t.Errorf("unexpected output (-want +got):\n%s", diff)
+	}
+}
+
 func testsFromFixtures(t *testing.T, testNames []string) map[string]struct {
 	hclInput string
 	want     string
@@ -615,6 +748,8 @@ func TestProcessFixtures(t *testing.T) {
 	t.Parallel()
 
 	tests := testsFromFixtures(t, []string{
+		"block_comments",
+		"comments",
 		"unchanged",
 	})
 	for name, tc := range tests {

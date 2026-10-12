@@ -48,6 +48,15 @@
 - **Code Formatting**:
   - Corrects spacing between sorted blocks.
   - Removes unnecessary leading or trailing newlines from the file.
+- **Comment-Preserving Sort**: Every comment is kept, including ones not
+  directly attached to a single item.
+  - A comment that introduces a group of related variables/locals (a
+    "section banner") keeps that group sorted beneath it — items never
+    get reordered out from under the comment that describes them.
+  - One effect of this: a file with such comments isn't necessarily
+    fully globally alphabetized. Items are sorted *within* each
+    comment-delimited group, and groups keep their original relative
+    order, so that no comment ever ends up describing the wrong thing.
 
 ## Supported File Types
 
