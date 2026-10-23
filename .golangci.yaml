@@ -108,7 +108,7 @@ linters:
       # Default: [ switch ]
       check:
         - switch
-        - map
+        - mapliteral
 
     funcorder:
       # Checks if the exported methods of a structure are placed before the non-exported ones.
