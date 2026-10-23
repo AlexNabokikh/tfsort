@@ -315,6 +315,41 @@ func TestParse(t *testing.T) {
 		}
 	})
 
+	t.Run("Dry run with output path prints preview without writing", func(t *testing.T) {
+		tempDir := t.TempDir()
+		inputPath := filepath.Join(tempDir, "input.tf")
+		outputPath := filepath.Join(tempDir, "preview.tf")
+		input := "variable \"z\" {}\nvariable \"a\" {}\n"
+		if err := os.WriteFile(inputPath, []byte(input), 0600); err != nil {
+			t.Fatalf("Failed to create synthetic HCL input: %v", err)
+		}
+
+		parsed, err := hclsort.ParseHCLContent([]byte(input), inputPath)
+		if err != nil {
+			t.Fatalf("Failed to parse synthetic HCL input: %v", err)
+		}
+		expected := strings.TrimSpace(string(hclsort.FormatHCLBytes(
+			hclsort.ProcessAndSortBlocks(parsed, ingestor.AllowedBlocks),
+		))) + "\n"
+
+		var parseErr error
+		capturedStdout := captureOutput(t, func() {
+			parseErr = ingestor.Parse(inputPath, outputPath, true, false)
+		})
+		if parseErr != nil {
+			t.Fatalf("Parse failed unexpectedly during dry run with output path: %v", parseErr)
+		}
+		if capturedStdout != expected {
+			t.Errorf("Dry run output mismatch.\nExpected:\n%s\nGot:\n%s", expected, capturedStdout)
+		}
+		if _, errStat := os.Stat(outputPath); !os.IsNotExist(errStat) {
+			t.Error("Output file was created during dry run with output path")
+		}
+		if got, readErr := os.ReadFile(inputPath); readErr != nil || string(got) != input {
+			t.Errorf("Input file changed during dry run: got %q, err %v", got, readErr)
+		}
+	})
+
 	t.Run("Overwrite input file", func(t *testing.T) {
 		tempInputFile := filepath.Join(testDataBaseDir, "temp_overwrite.tf")
 		if err := os.WriteFile(tempInputFile, validTestContentBytes, 0600); err != nil {

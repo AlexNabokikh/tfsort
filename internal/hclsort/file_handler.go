@@ -66,6 +66,8 @@ func WriteSortedContent(
 	finalBytes := append(bytes.TrimSpace(outputBytes), '\n')
 
 	switch {
+	case dryRun:
+		fmt.Print(string(finalBytes))
 	case outputPath != "":
 		err := os.WriteFile(outputPath, finalBytes, 0644)
 		if err != nil {
@@ -75,8 +77,6 @@ func WriteSortedContent(
 				err,
 			)
 		}
-	case dryRun:
-		fmt.Print(string(finalBytes))
 	case isInputFromStdin:
 		_, err := fmt.Print(string(finalBytes))
 		if err != nil {
